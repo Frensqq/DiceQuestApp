@@ -11,16 +11,16 @@ import kotlinx.coroutines.launch
 
 class SplashScreenViewModel(): ViewModel() {
 
-    fun launch(navHostController: NavHostController){
+    fun launch(navHostController: NavHostController, isOnline: Boolean){
         viewModelScope.launch {
-            delay(2000)
+            delay(5000)
             Log.d("Splash", UserRepository.Act.toString())
 
-            if (UserRepository.Act){
-                navHostController.navigate(NavigationRoutes.MAIN)
-            }else{
-                navHostController.navigate(NavigationRoutes.AUTH)
-            }
+                if (UserRepository.Act) {
+                    navHostController.navigate(NavigationRoutes.MAIN)
+                } else {
+                    navHostController.navigate(NavigationRoutes.AUTH)
+                }
         }
     }
 

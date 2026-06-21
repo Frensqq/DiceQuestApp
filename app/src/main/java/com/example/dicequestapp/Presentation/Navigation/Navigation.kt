@@ -7,16 +7,28 @@ import androidx.navigation.Navigation
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.dicequestapp.Domain.UserRepository
 import com.example.dicequestapp.Presentation.Screen.System.NoInternetScreen
+import com.example.dicequestapp.Presentation.Screen.System.SplashScreen
+import com.example.htm.Presentation.viewModels.SplashScreenViewModel
+import com.example.netlibrary.Presentation.Screen.Auth.LogInScreen
+import kotlinx.coroutines.delay
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun Navigation(isOnline: Boolean){
 
     val NavController = rememberNavController()
+    val ViewModelSplash: SplashScreenViewModel = koinViewModel()
 
     LaunchedEffect(isOnline) {
+        delay(2000)
         if (isOnline) {
-            NavController.popBackStack() 
+            if (UserRepository.Act){
+                NavController.navigate(NavigationRoutes.MAIN)
+            }else{
+                NavController.navigate(NavigationRoutes.AUTH)
+            }
         } else {
             NavController.navigate(NavigationRoutes.NO_INTERNET_SCREEN) {
                 popUpTo(0) { inclusive = true }
@@ -25,14 +37,19 @@ fun Navigation(isOnline: Boolean){
         }
     }
 
-    NavHost(navController = NavController, startDestination = if (isOnline) NavigationRoutes.MAIN else NavigationRoutes.NO_INTERNET_SCREEN){
+    NavHost(navController = NavController, startDestination =  NavigationRoutes.SPLASH_SCREEN ){
 
         composable(NavigationRoutes.SPLASH_SCREEN) {
-
+            SplashScreen(ViewModelSplash,NavController, isOnline)
         }
 
-        composable(NavigationRoutes.AUTH) {
+        composable(NavigationRoutes.NO_INTERNET_SCREEN) {
+            NoInternetScreen()
+        }
 
+
+        composable(NavigationRoutes.AUTH) {
+            LogInScreen(NavController)
         }
 
         composable(NavigationRoutes.REGISTER) {
@@ -47,9 +64,6 @@ fun Navigation(isOnline: Boolean){
 
         }
 
-        composable(NavigationRoutes.NO_INTERNET_SCREEN) {
-            NoInternetScreen()
-        }
 
         composable(NavigationRoutes.OTP_AUTH) {
 
