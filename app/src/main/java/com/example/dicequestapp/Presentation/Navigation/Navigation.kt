@@ -8,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.dicequestapp.Domain.UserRepository
+import com.example.dicequestapp.Presentation.Screen.Auth.RegisterScreen
 import com.example.dicequestapp.Presentation.Screen.System.NoInternetScreen
 import com.example.dicequestapp.Presentation.Screen.System.SplashScreen
 import com.example.htm.Presentation.viewModels.AuthViewModel
@@ -55,7 +56,7 @@ fun Navigation(isOnline: Boolean){
         }
 
         composable(NavigationRoutes.REGISTER) {
-
+            RegisterScreen(NavController, authViewModel)
         }
 
         composable(NavigationRoutes.MAIN) {

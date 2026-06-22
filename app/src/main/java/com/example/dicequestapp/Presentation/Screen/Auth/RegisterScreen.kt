@@ -1,8 +1,12 @@
-package com.example.netlibrary.Presentation.Screen.Auth
+package com.example.dicequestapp.Presentation.Screen.Auth
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,27 +18,38 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import coil.compose.rememberAsyncImagePainter
 import com.example.dicequestapp.Presentation.Navigation.NavigationRoutes
 import com.example.dicequestapp.R
 import com.example.dq_ui.Button.ButtonBig
 import com.example.dq_ui.Inputs.InputText
+import com.example.dq_ui.Inputs.InputsImage
 import com.example.dq_ui.UI.DiceQuestTheme
 import com.example.dq_ui.UI.SpacerH
 import com.example.dq_ui.UI.SpacerW
 import com.example.htm.Presentation.viewModels.AuthViewModel
 
-
 @Composable
-fun LogInScreen(navController: NavHostController, viewModel: AuthViewModel) {
+fun RegisterScreen(navController: NavHostController, viewModel: AuthViewModel){
 
     val state = viewModel.state
+
+    val context = LocalContext.current
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            viewModel.selectImage(it, context)
+        }
+    }
+
 
     fun validateEmail(email: String): Boolean {
         val emailRegex = Regex("^[A-Za-z0-9]{4,}@[A-Za-z0-9]{2,}\\.[A-Za-z]{2,3}$")
@@ -45,24 +60,21 @@ fun LogInScreen(navController: NavHostController, viewModel: AuthViewModel) {
         return isValid
     }
 
+    Column(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
 
 
-    Column(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp)) {
 
-        Image(
-            painter = painterResource(R.drawable.logo),
-            contentDescription = null
-        )
-        SpacerH(40)
-
-        Text("Вход!",
+        Text("Регистрация!",
             style = DiceQuestTheme.typography.displayLarge,
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center,
             color =  DiceQuestTheme.colors.TextPrimary.copy(alpha = 0.8f)
         )
 
-        SpacerH(15)
+        SpacerH(30)
 
         InputText(
             text = state.email,
@@ -124,13 +136,66 @@ fun LogInScreen(navController: NavHostController, viewModel: AuthViewModel) {
         }
 
 
-        SpacerH(50)
+        SpacerH(20)
+
+        InputText(
+            text = state.passwordConfirm,
+            onValueChange = {
+                viewModel.updateState(state.copy(passwordConfirm = it))
+            },
+            isPass = true,
+            isError = false,
+            placeholder = "Повторите пароль"
+        )
+
+        SpacerH(20)
+
+        InputText(
+            text = state.username,
+            onValueChange ={
+                validateEmail(it)
+                viewModel.updateState(state.copy(username = it))
+            },
+            isPass = false,
+            isError = false,
+            placeholder = "UserName"
+        )
+
+        SpacerH(20)
+
+        val imageUri = viewModel.selectedImageUri
+        val painter = if (imageUri != null) {
+            rememberAsyncImagePainter(model = imageUri)
+        } else {
+            null
+        }
+
+        InputsImage({
+            galleryLauncher.launch("image/*")
+        },
+            painter,imageUri != null
+            )
+
+        if (imageUri != null) {
+
+            SpacerH(5)
+
+            Text(
+                "Загрузить другой",
+                style = DiceQuestTheme.typography.bodyLarge,
+                color = DiceQuestTheme.colors.TextPrimary,
+                modifier = Modifier.clickable {
+                    galleryLauncher.launch("image/*")
+                }
+            )
+        }
+
+        SpacerH(20)
 
         ButtonBig(
-            text = "Войти",
+            text = "Зарегистрироваться",
             onClick = {
                 validateEmail(state.email)
-
             },
             enabled = state.email.isNotEmpty() && state.password.isNotEmpty(),
             type = true
@@ -138,32 +203,15 @@ fun LogInScreen(navController: NavHostController, viewModel: AuthViewModel) {
 
         SpacerH(20)
 
-        Text("Зарегистрироваться",
+        Text("Уже есть аккаунт?, Войти",
             style = DiceQuestTheme.typography.labelLarge,
             modifier = Modifier.fillMaxWidth().clickable(
                 onClick = {
-                    navController.navigate(NavigationRoutes.REGISTER)
+                    navController.navigate(NavigationRoutes.AUTH)
                 }
             ),
             textAlign = TextAlign.Center,
             color =  DiceQuestTheme.colors.TextPrimary.copy(alpha = 0.7f)
         )
-
-        SpacerH(10)
-
-        Text("Восстановить пароль",
-            style = DiceQuestTheme.typography.labelLarge,
-            modifier = Modifier.fillMaxWidth().clickable(
-                onClick = {
-
-                }
-            ),
-            textAlign = TextAlign.Center,
-            color =  DiceQuestTheme.colors.TextPrimary.copy(alpha = 0.7f)
-        )
-
-
-
-
     }
 }
