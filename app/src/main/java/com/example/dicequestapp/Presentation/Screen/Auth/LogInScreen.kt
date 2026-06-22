@@ -130,7 +130,9 @@ fun LogInScreen(navController: NavHostController, viewModel: AuthViewModel) {
             text = "Войти",
             onClick = {
                 validateEmail(state.email)
-
+                if (state.emailError == null){
+                    viewModel.Auth(navController)
+                }
             },
             enabled = state.email.isNotEmpty() && state.password.isNotEmpty(),
             type = true

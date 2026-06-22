@@ -196,6 +196,9 @@ fun RegisterScreen(navController: NavHostController, viewModel: AuthViewModel){
             text = "Зарегистрироваться",
             onClick = {
                 validateEmail(state.email)
+                if (state.emailError == null){
+                    viewModel.Registration(navController, context)
+                }
             },
             enabled = state.email.isNotEmpty() && state.password.isNotEmpty(),
             type = true

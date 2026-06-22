@@ -12,6 +12,10 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.example.dicequestapp.Domain.UseCase
+import com.example.dicequestapp.Domain.UserRepository
+import com.example.dicequestapp.Presentation.Navigation.NavigationRoutes
+import com.example.dq_net_library.Data.Remoute.PBApiServis
+import com.example.dq_net_library.Domain.Model.NetworkResult
 import com.example.netlibrary.Presentation.State.AuthState
 import kotlinx.coroutines.launch
 import java.io.File
@@ -89,5 +93,132 @@ class AuthViewModel(private val UseCase: UseCase): ViewModel() {
         }
     }
 
+    fun Auth(navController: NavHostController) {
+        viewModelScope.launch {
+            updateState(state.copy(isLoading = true, generalError = null))
+            try {
+                when(val response = UseCase.loginIn(
+                    email = state.email,
+                    password = state.password,
+                )){
+                    is NetworkResult.Success -> {
+                        UserRepository.UserId = response.data.record.id
+                        UserRepository.Act = true
+                        UserRepository.userName = response.data.record.userName
+                        UserRepository.Token = response.data.token
+                        PBApiServis.setToken(UserRepository.Token)
 
+                        navController.navigate(NavigationRoutes.MAIN)
+
+                        updateState(state.copy(
+                            isLoading = false,
+                            password = "",
+                            passwordConfirm = "",
+                            email = "",
+                            username = ""
+                        ))
+                    }
+                    is NetworkResult.Error -> {
+                        updateState(state.copy(
+                            isLoading = false,
+                            generalError = "Ошибка авторизации. Введите данные повторно."
+                        ))
+                        Log.e("Auth Error", response.errorResponse.message)
+                    }
+                    is NetworkResult.NoInternet -> {
+                        updateState(state.copy(
+                            isNotInternet = true,
+                            generalError = "Нет подключения к интернету"
+                        ))
+                    }
+                }
+            } catch (e: Exception) {
+                updateState(state.copy(
+                    isLoading = false,
+                    generalError = "Ошибка авторизации. Введите данные повторно."
+                ))
+            }
+        }
+    }
+
+    fun Registration(navController: NavHostController,context: Context ) {
+        viewModelScope.launch {
+            updateState(state.copy(isLoading = true, generalError = null))
+            try {
+
+                var avatarFile: File? = null
+                selectedImageUri?.let { uri ->
+                    avatarFile = uriToFile(context, uri)
+                    if (avatarFile == null) {
+                        Log.e("CreateUser", "Failed to convert URI to file")
+                    }
+                }
+
+                when(val response = UseCase.registration(
+                    email = state.email,
+                    password = state.password,
+                    passwordConfirm = state.passwordConfirm,
+                    username = state.username,
+                    avatar = avatarFile
+                )){
+                    is NetworkResult.Success -> {
+                        UserRepository.UserId = response.data.id
+                        UserRepository.Email = state.email
+                        AuthInRegister()
+                        navController.navigate(NavigationRoutes.MAIN)
+                    }
+                    is NetworkResult.Error -> {
+                        updateState(state.copy(
+                            isLoading = false,
+                            generalError = "Ошибка регистрации. Попробуйте снова."
+                        ))
+                        Log.e("Reg Error", response.errorResponse.message)
+                    }
+                    is NetworkResult.NoInternet -> {
+                        updateState(state.copy(
+                            isNotInternet = true,
+                            generalError = "Нет подключения к интернету"
+                        ))
+                    }
+                }
+            } catch (e: Exception) {
+                updateState(state.copy(
+                    isLoading = false,
+                    generalError = "Ошибка регистрации. Введите данные повторно."
+                ))
+            }
+        }
+    }
+
+    fun AuthInRegister()   {
+        viewModelScope.launch {
+            try {
+                when(val response = UseCase.loginIn(
+                    email = state.email,
+                    password = state.password,
+                )){
+                    is NetworkResult.Success -> {
+                        UserRepository.UserId = response.data.record.id
+                        UserRepository.Act = true
+                        UserRepository.Token = response.data.token
+                        PBApiServis.setToken(UserRepository.Token)
+                    }
+                    is NetworkResult.Error -> {
+                        updateState(state.copy(isLoading = false, error = response.errorResponse.message))
+                        Log.e("AuthInRegister Error", response.errorResponse.message)
+
+                    }
+                    is NetworkResult.NoInternet -> {
+                        updateState(state.copy(isNotInternet = true))
+                        Log.e("AuthInRegister NoInternet", state.error.toString())
+                    }
+
+                }
+                Log.d("AuthInRegister", state.error.toString())
+            }
+            catch (e: Exception){
+                Log.e("AuthInRegister ViewModel", e.message.toString())
+            }
+        }
+    }
 }
