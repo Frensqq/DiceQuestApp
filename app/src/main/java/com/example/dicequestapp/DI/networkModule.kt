@@ -8,6 +8,7 @@ import com.example.dq_net_library.Data.Repository.PBRepositoryImpl
 import com.example.dq_net_library.Domain.Repository.Repository
 import com.example.dq_net_library.Network.NetworkConnected
 import com.example.dq_net_library.Network.NetworkMonitor
+import com.example.htm.Presentation.viewModels.AuthViewModel
 import com.example.htm.Presentation.viewModels.SplashScreenViewModel
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.viewmodel.dsl.viewModel
@@ -29,5 +30,6 @@ val networkModule = module{
     factory { UseCase(get()) }
 
     viewModel{ SplashScreenViewModel() }
+    viewModel{ AuthViewModel(get()) }
 
 }

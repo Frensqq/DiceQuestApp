@@ -3,5 +3,6 @@
 
     <style name="Theme.DiceQuestApp" parent="android:Theme.Material.Light.NoActionBar" >
         <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@drawable/background_gradient</item>
     </style>
 </resources>

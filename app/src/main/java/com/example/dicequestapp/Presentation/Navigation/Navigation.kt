@@ -10,6 +10,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.dicequestapp.Domain.UserRepository
 import com.example.dicequestapp.Presentation.Screen.System.NoInternetScreen
 import com.example.dicequestapp.Presentation.Screen.System.SplashScreen
+import com.example.htm.Presentation.viewModels.AuthViewModel
 import com.example.htm.Presentation.viewModels.SplashScreenViewModel
 import com.example.netlibrary.Presentation.Screen.Auth.LogInScreen
 import kotlinx.coroutines.delay
@@ -20,6 +21,7 @@ fun Navigation(isOnline: Boolean){
 
     val NavController = rememberNavController()
     val ViewModelSplash: SplashScreenViewModel = koinViewModel()
+    val authViewModel: AuthViewModel = koinViewModel()
 
     LaunchedEffect(isOnline) {
         delay(2000)
@@ -49,7 +51,7 @@ fun Navigation(isOnline: Boolean){
 
 
         composable(NavigationRoutes.AUTH) {
-            LogInScreen(NavController)
+            LogInScreen(NavController, authViewModel)
         }
 
         composable(NavigationRoutes.REGISTER) {
