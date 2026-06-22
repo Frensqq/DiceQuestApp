@@ -1,4 +1,4 @@
-package com.example.netlibrary.Presentation.Screen.Auth
+package com.example.dicequestapp.Presentation.Screen.Auth
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -32,7 +32,7 @@ import com.example.htm.Presentation.viewModels.AuthViewModel
 
 
 @Composable
-fun LogInScreen(navController: NavHostController, viewModel: AuthViewModel) {
+fun OtpRequest(navController: NavHostController, viewModel: AuthViewModel) {
 
     val state = viewModel.state
 
@@ -55,7 +55,7 @@ fun LogInScreen(navController: NavHostController, viewModel: AuthViewModel) {
         )
         SpacerH(40)
 
-        Text("Вход!",
+        Text("Восстановление пароля!",
             style = DiceQuestTheme.typography.displayLarge,
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center,
@@ -84,65 +84,24 @@ fun LogInScreen(navController: NavHostController, viewModel: AuthViewModel) {
             )
         }
 
-        SpacerH(20)
-
-        InputText(
-            text = state.password,
-            onValueChange = {
-                viewModel.updateState(state.copy(password = it))
-            },
-            isPass = true,
-            isError = false,
-            placeholder = "Пароль"
-        )
-
-        if (state.generalError != null) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp)
-                    .background(DiceQuestTheme.colors.Error.copy(alpha = 0.1f), shape = RoundedCornerShape(8.dp))
-                    .padding(12.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        painter = painterResource(com.example.dq_ui.R.drawable.cross),
-                        contentDescription = "error",
-                        tint = DiceQuestTheme.colors.Error,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    SpacerW(8)
-                    Text(
-                        text = state.generalError!!,
-                        style = DiceQuestTheme.typography.labelLarge,
-                        color = DiceQuestTheme.colors.Error
-                    )
-                }
-            }
-        }
-
-
         SpacerH(50)
 
         ButtonBig(
-            text = "Войти",
+            text = "Отправить запрос",
             onClick = {
-                validateEmail(state.email)
 
             },
-            enabled = state.email.isNotEmpty() && state.password.isNotEmpty(),
+            enabled = state.email.isNotEmpty(),
             type = true
         )
 
         SpacerH(20)
 
-        Text("Зарегистрироваться",
+        Text("Войти",
             style = DiceQuestTheme.typography.labelLarge,
             modifier = Modifier.fillMaxWidth().clickable(
                 onClick = {
-                    navController.navigate(NavigationRoutes.REGISTER)
+                    navController.navigate(NavigationRoutes.AUTH)
                 }
             ),
             textAlign = TextAlign.Center,
@@ -151,11 +110,11 @@ fun LogInScreen(navController: NavHostController, viewModel: AuthViewModel) {
 
         SpacerH(10)
 
-        Text("Восстановить пароль",
+        Text("Зарегистрироваться",
             style = DiceQuestTheme.typography.labelLarge,
             modifier = Modifier.fillMaxWidth().clickable(
                 onClick = {
-                    navController.navigate(NavigationRoutes.OTP_REQUEST)
+                    navController.navigate(NavigationRoutes.REGISTER)
                 }
             ),
             textAlign = TextAlign.Center,
