@@ -1,5 +1,6 @@
 package com.example.netlibrary.Presentation.State
 
+import com.example.dq_net_library.Domain.Model.User.ResponseOtpRequest
 import com.example.dq_net_library.Domain.Model.User.User
 
 
@@ -23,6 +24,9 @@ data class AuthState(
     var user: User? =  null,
 
     var token: String = "",
+
+    val otpRequest: ResponseOtpRequest? = null,
+    val otpCode: String = ""
 )
 
 

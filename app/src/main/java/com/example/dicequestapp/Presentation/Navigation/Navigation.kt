@@ -9,6 +9,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.dicequestapp.Domain.UserRepository
 import com.example.dicequestapp.Presentation.Screen.Auth.OtpRequest
+import com.example.dicequestapp.Presentation.Screen.Auth.OtpResponse
 import com.example.dicequestapp.Presentation.Screen.Auth.RegisterScreen
 import com.example.dicequestapp.Presentation.Screen.System.NoInternetScreen
 import com.example.dicequestapp.Presentation.Screen.System.SplashScreen
@@ -29,7 +30,7 @@ fun Navigation(isOnline: Boolean){
         delay(2000)
         if (isOnline) {
             if (UserRepository.Act){
-                NavController.navigate(NavigationRoutes.MAIN)
+                NavController.navigate(NavigationRoutes.AUTH)
             }else{
                 NavController.navigate(NavigationRoutes.AUTH)
             }
@@ -70,7 +71,7 @@ fun Navigation(isOnline: Boolean){
 
 
         composable(NavigationRoutes.OTP_AUTH) {
-            OtpRequest(NavController, authViewModel)
+            OtpResponse(NavController, authViewModel)
         }
 
         composable(NavigationRoutes.OTP_REQUEST) {

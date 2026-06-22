@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.example.dicequestapp.Domain.UseCase
@@ -218,6 +219,97 @@ class AuthViewModel(private val UseCase: UseCase): ViewModel() {
             }
             catch (e: Exception){
                 Log.e("AuthInRegister ViewModel", e.message.toString())
+            }
+        }
+    }
+
+
+    fun RequestChangePassword(navHostController: NavHostController){
+        viewModelScope.launch {
+            try {
+                when(val response = UseCase.resetPassword(
+                    email = state.email,
+                )){
+                    is NetworkResult.Success -> {
+                        navHostController.navigate(NavigationRoutes.MAIN)
+                        Log.d("RequestChangePassword Error", "Success")
+                    }
+                    is NetworkResult.Error -> {
+                        updateState(state.copy(isLoading = false, error = response.errorResponse.message))
+                        Log.e("RequestChangePassword Error", response.errorResponse.message)
+
+                    }
+                    is NetworkResult.NoInternet -> {
+                        updateState(state.copy(isNotInternet = true))
+                        Log.e("RequestChangePassword NoInternet", state.error.toString())
+                    }
+
+                }
+            }
+            catch (e: Exception){
+                Log.e("RequestChangePassword ViewModel", e.message.toString())
+            }
+        }
+    }
+
+    fun RequestOTP(navHostController: NavHostController){
+        viewModelScope.launch {
+            try {
+                when(val response = UseCase.otpRequest(
+                    email = state.email,
+                )){
+                    is NetworkResult.Success -> {
+                        updateState(state.copy(otpRequest = response.data))
+                        navHostController.navigate(NavigationRoutes.OTP_AUTH)
+                        Log.d("RequestChangePassword Error", "Success")
+                    }
+                    is NetworkResult.Error -> {
+                        updateState(state.copy(isLoading = false, error = response.errorResponse.message))
+                        Log.e("RequestChangePassword Error", response.errorResponse.message)
+
+                    }
+                    is NetworkResult.NoInternet -> {
+                        updateState(state.copy(isNotInternet = true))
+                        Log.e("RequestChangePassword NoInternet", state.error.toString())
+                    }
+
+                }
+            }
+            catch (e: Exception){
+                Log.e("RequestChangePassword ViewModel", e.message.toString())
+            }
+        }
+    }
+
+    fun ResponseOTP(navHostController: NavHostController){
+        viewModelScope.launch {
+            try {
+                when(val response = UseCase.otpAuth(
+                    otpId = state.otpRequest?.otpId?:"",
+                    password = state.otpCode,
+                )){
+                    is NetworkResult.Success -> {
+                        UserRepository.UserId = response.data.record.id
+                        UserRepository.Act = true
+                        UserRepository.Token = response.data.token
+                        PBApiServis.setToken(UserRepository.Token)
+                        RequestChangePassword(navHostController)
+                        Log.d("RequestChangePassword Error", "Success")
+                    }
+                    is NetworkResult.Error -> {
+                        updateState(state.copy(isLoading = false, error = response.errorResponse.message))
+                        Log.e("RequestChangePassword Error", response.errorResponse.message)
+
+                    }
+                    is NetworkResult.NoInternet -> {
+                        updateState(state.copy(isNotInternet = true))
+                        Log.e("RequestChangePassword NoInternet", state.error.toString())
+                    }
+
+                }
+            }
+            catch (e: Exception){
+                Log.e("RequestChangePassword ViewModel", e.message.toString())
             }
         }
     }
