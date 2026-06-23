@@ -103,4 +103,8 @@ class UseCase(private val  Repository: Repository) {
             newPassword
         )
     }
+
+    fun getImageUrl(collectionId: String, recordId: String, fileName: String): String{
+        return Repository.getImageUrl(collectionId,recordId,fileName)
+    }
 }

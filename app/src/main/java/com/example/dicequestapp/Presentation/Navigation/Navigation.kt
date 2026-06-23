@@ -12,8 +12,10 @@ import com.example.dicequestapp.Presentation.Screen.Auth.OtpRequest
 import com.example.dicequestapp.Presentation.Screen.Auth.OtpResponse
 import com.example.dicequestapp.Presentation.Screen.Auth.RegisterScreen
 import com.example.dicequestapp.Presentation.Screen.Main.MainScreen
+import com.example.dicequestapp.Presentation.Screen.Main.ProfileScreen
 import com.example.dicequestapp.Presentation.Screen.System.NoInternetScreen
 import com.example.dicequestapp.Presentation.Screen.System.SplashScreen
+import com.example.dicequestapp.Presentation.ViewModels.MainViewModel
 import com.example.htm.Presentation.viewModels.AuthViewModel
 import com.example.htm.Presentation.viewModels.SplashScreenViewModel
 import com.example.netlibrary.Presentation.Screen.Auth.LogInScreen
@@ -26,6 +28,7 @@ fun Navigation(isOnline: Boolean){
     val NavController = rememberNavController()
     val ViewModelSplash: SplashScreenViewModel = koinViewModel()
     val authViewModel: AuthViewModel = koinViewModel()
+    val mainViewModel: MainViewModel = koinViewModel()
 
     LaunchedEffect(isOnline) {
         delay(2000)
@@ -63,11 +66,11 @@ fun Navigation(isOnline: Boolean){
         }
 
         composable(NavigationRoutes.MAIN) {
-            MainScreen(NavController, authViewModel)
+            MainScreen(NavController, mainViewModel)
         }
 
         composable(NavigationRoutes.PROFILE) {
-
+            ProfileScreen(NavController, mainViewModel)
         }
 
 

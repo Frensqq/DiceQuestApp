@@ -2,6 +2,7 @@ package com.example.dicequestapp.DI
 
 
 import com.example.dicequestapp.Domain.UseCase
+import com.example.dicequestapp.Presentation.ViewModels.MainViewModel
 import com.example.dq_net_library.Data.Remoute.PBApi
 import com.example.dq_net_library.Data.Remoute.PBApiServis
 import com.example.dq_net_library.Data.Repository.PBRepositoryImpl
@@ -31,5 +32,6 @@ val networkModule = module{
 
     viewModel{ SplashScreenViewModel() }
     viewModel{ AuthViewModel(get()) }
+    viewModel{ MainViewModel(get()) }
 
 }

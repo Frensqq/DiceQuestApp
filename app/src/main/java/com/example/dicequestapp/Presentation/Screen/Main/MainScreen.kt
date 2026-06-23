@@ -5,13 +5,20 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import coil.compose.rememberAsyncImagePainter
 import com.example.dicequestapp.Domain.UserRepository
 import com.example.dicequestapp.Presentation.Navigation.WithBottomNav
+import com.example.dicequestapp.Presentation.ViewModels.MainViewModel
 import com.example.dq_ui.Cards.CardMenu
 import com.example.dq_ui.Cards.CardUser
 import com.example.dq_ui.Headers.Header
@@ -21,10 +28,22 @@ import com.example.dq_ui.icons.BottomNavItem
 import com.example.htm.Presentation.viewModels.AuthViewModel
 
 @Composable
-fun MainScreen(navController: NavHostController, viewModel: AuthViewModel){
+fun MainScreen(navController: NavHostController, viewModel: MainViewModel){
     val state = viewModel.state
+    val UserData = state.User
+    var loading by remember { mutableStateOf(true) }
+    LaunchedEffect(Unit) {
+        if (loading) {
+            viewModel.GetUser()
+            loading = false
+        }
+    }
 
-
+    val userAvatarUrl = UserData?.let { user ->
+        if (user.avatar.isNotEmpty()) {
+            viewModel.getImageUrl("users", user.id, user.avatar)
+        } else null
+    }
 
 
     WithBottomNav(navController, BottomNavItem.Home){
@@ -33,7 +52,7 @@ fun MainScreen(navController: NavHostController, viewModel: AuthViewModel){
 
             SpacerH(10)
             CardUser(
-                null,
+                rememberAsyncImagePainter(userAvatarUrl),
                 UserRepository.userName?:"User",
                 {},
                 painterResource(R.drawable.settings)
@@ -62,6 +81,5 @@ fun MainScreen(navController: NavHostController, viewModel: AuthViewModel){
 
         }
     }
-
 
 }
