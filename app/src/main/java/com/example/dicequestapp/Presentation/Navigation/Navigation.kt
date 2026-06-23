@@ -11,6 +11,7 @@ import com.example.dicequestapp.Domain.UserRepository
 import com.example.dicequestapp.Presentation.Screen.Auth.OtpRequest
 import com.example.dicequestapp.Presentation.Screen.Auth.OtpResponse
 import com.example.dicequestapp.Presentation.Screen.Auth.RegisterScreen
+import com.example.dicequestapp.Presentation.Screen.Main.MainScreen
 import com.example.dicequestapp.Presentation.Screen.System.NoInternetScreen
 import com.example.dicequestapp.Presentation.Screen.System.SplashScreen
 import com.example.htm.Presentation.viewModels.AuthViewModel
@@ -30,7 +31,7 @@ fun Navigation(isOnline: Boolean){
         delay(2000)
         if (isOnline) {
             if (UserRepository.Act){
-                NavController.navigate(NavigationRoutes.AUTH)
+                NavController.navigate(NavigationRoutes.MAIN)
             }else{
                 NavController.navigate(NavigationRoutes.AUTH)
             }
@@ -62,7 +63,7 @@ fun Navigation(isOnline: Boolean){
         }
 
         composable(NavigationRoutes.MAIN) {
-
+            MainScreen(NavController, authViewModel)
         }
 
         composable(NavigationRoutes.PROFILE) {
