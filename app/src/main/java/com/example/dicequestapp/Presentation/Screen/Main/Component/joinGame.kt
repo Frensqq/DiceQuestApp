@@ -1,11 +1,7 @@
 package com.example.dicequestapp.Presentation.Screen.Main.Component
 
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
+import android.Manifest
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,59 +21,36 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavHostController
-import coil.compose.rememberAsyncImagePainter
-import com.example.dicequestapp.Domain.UserRepository
 import com.example.dicequestapp.Presentation.ViewModels.MainViewModel
+import com.example.dq_ui.Button.ButtonBig
 import com.example.dq_ui.Button.ButtonSmall
 import com.example.dq_ui.Inputs.InputText
-import com.example.dq_ui.Inputs.InputsImage
-import com.example.dq_ui.R
+import com.example.dq_ui.Inputs.PlayerCountSelector
 import com.example.dq_ui.UI.DiceQuestTheme
 import com.example.dq_ui.UI.SpacerH
 import com.example.dq_ui.UI.SpacerW
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun EditProfileDialog(
+fun JoinGameDialog(
     navHostController: NavHostController,
     viewModel: MainViewModel,
     onDismiss: () -> Unit
 ) {
     val state = viewModel.state
     val context = LocalContext.current
+    var isScanning by remember { mutableStateOf(false) }
+    val cameraPermission = rememberPermissionState(Manifest.permission.CAMERA)
 
-
-    val galleryLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let {
-            viewModel.selectImage(it, context)
-        }
-    }
-
-    // Получаем URL текущего аватара, если он есть
-    val currentAvatarUrl = state.User?.let { user ->
-        if (user.avatar.isNotEmpty()) {
-            viewModel.getImageUrl("users", user.id, user.avatar)
-        } else null
-    }
-
-    // Определяем, какое изображение показывать: новое выбранное или текущее
-    val displayImageUri = viewModel.selectedImageUri
-    val painter = when {
-        displayImageUri != null -> rememberAsyncImagePainter(model = displayImageUri)
-        currentAvatarUrl != null -> rememberAsyncImagePainter(model = currentAvatarUrl)
-        else -> null
-    }
-    val hasImage = displayImageUri != null || currentAvatarUrl != null
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -102,9 +74,8 @@ fun EditProfileDialog(
                     .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Заголовок
                 Text(
-                    text = "Редактирование профиля",
+                    text = "Подключение к игре",
                     style = DiceQuestTheme.typography.headlineLarge,
                     color = DiceQuestTheme.colors.TextPrimary,
                     textAlign = TextAlign.Center
@@ -112,34 +83,49 @@ fun EditProfileDialog(
 
                 SpacerH(20)
 
-
-
-                // Поле для изображения
-                InputsImage(
-                    onClick = {
-                        galleryLauncher.launch("image/*")
-                    },
-                    painter = painter,
-                    state = hasImage
-                )
-                Text(
-                    if (hasImage) "Загрузить другой" else "Выбрать фото",
-                    style = DiceQuestTheme.typography.bodyLarge,
-                    color = DiceQuestTheme.colors.Primary,
-                    modifier = Modifier.clickable {
-                        galleryLauncher.launch("image/*")
-                    }
+                InputText(
+                    text = state.gameId,
+                    placeholder = "Введите код игры",
+                    onValueChange = {
+                        viewModel.updateState(state.copy(gameId = it)) },
+                    isPass = false
                 )
 
                 SpacerH(16)
 
+                Column() {
+                    if (isScanning && cameraPermission.status.isGranted) {
+                        SpacerH(8)
+                        QRCodeScannerView(
+                            onQrCodeScanned = { code ->
+                                viewModel.updateState(
+                                    state.copy(
+                                        gameId = code,
+                                        generalError = null
+                                    )
+                                )
+                                isScanning = false
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(180.dp)
+                        )
+                        SpacerH(8)
+                    }
 
-                InputText(
-                    text = state.username,
-                    placeholder = "Введите имя пользователя",
-                    onValueChange = { viewModel.updateState(state.copy(username = it))},
-                    isPass = false
-                )
+                    ButtonBig(
+                        text = if (isScanning) "Скрыть сканер" else "Сканировать QR-код",
+                        onClick = {
+                            if (!cameraPermission.status.isGranted) {
+                                cameraPermission.launchPermissionRequest()
+                            } else {
+                                isScanning = !isScanning
+                            }
+                        },
+                        type = true
+                    )
+
+                }
 
                 SpacerH(24)
 
@@ -150,10 +136,10 @@ fun EditProfileDialog(
                 ) {
                     ButtonSmall(
                         onClick = {
-                            viewModel.UpdateProfile(navHostController, context)
+                            viewModel.updateState(state.copy(statusGame = "Created"))
                             onDismiss()
                         },
-                        text = "Сохранить",
+                        text = "Войти",
                         type = false
                     )
 
@@ -163,11 +149,13 @@ fun EditProfileDialog(
                         onClick = {
                             viewModel.updateState(state.copy(username = ""))
                             onDismiss()
-                                  },
-                        text = "Выйти",
+                        },
+                        text = "Отмена",
                         type = true
                     )
                 }
+
+
             }
         }
     }

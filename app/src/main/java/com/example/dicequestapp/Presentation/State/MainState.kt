@@ -15,4 +15,12 @@ data class MainState (
 
     var User: User? = null,
 
+    var gameId: String = "",
+    var multiplayer: Boolean = false,
+    var nameGame: String = "",
+    var countPlayer: Int = 2,
+    var typeGame: String = "",
+    var statusGame: String = "",
+
+
     )
