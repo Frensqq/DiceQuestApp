@@ -1,5 +1,7 @@
 package com.example.dicequestapp.Presentation.State
 
+import com.example.dq_net_library.Domain.Model.Game.Game
+import com.example.dq_net_library.Domain.Model.Player.Player
 import com.example.dq_net_library.Domain.Model.User.User
 
 data class MainState (
@@ -22,5 +24,12 @@ data class MainState (
     var typeGame: String = "",
     var statusGame: String = "",
 
+    var statePlayer: String = "",
+    var BOT: Boolean = false,
+    var positionPlayer: String = "",
+    var Bonus: String = "",
+    var Event: String = "",
 
+    var MyPlayer: Player? = null,
+    var Game: Game? = null,
     )

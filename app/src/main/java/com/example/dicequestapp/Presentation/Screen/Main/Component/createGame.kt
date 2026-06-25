@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavHostController
+import com.example.dicequestapp.Presentation.ViewModels.GameViewModel
 import com.example.dicequestapp.Presentation.ViewModels.MainViewModel
 import com.example.dq_ui.Button.ButtonSmall
 import com.example.dq_ui.Inputs.InputText
@@ -33,7 +34,10 @@ import com.example.dq_ui.UI.SpacerW
 fun CreateGameDialog(
     navHostController: NavHostController,
     viewModel: MainViewModel,
-    onDismiss: () -> Unit
+    gameViewModel: GameViewModel,
+    isMultiplayer: Boolean,
+    onDismiss: () -> Unit,
+    onGameCreated: () -> Unit
 ) {
     val state = viewModel.state
     val context = LocalContext.current
@@ -60,10 +64,10 @@ fun CreateGameDialog(
                     .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                val typeGame =  if (state.multiplayer) "многопользовательской" else "одиночной"
+                val typeText = if (isMultiplayer) "многопользовательской" else "одиночной"
 
                 Text(
-                    text = "Создание $typeGame игры",
+                    text = "Создание $typeText игры",
                     style = DiceQuestTheme.typography.headlineLarge,
                     color = DiceQuestTheme.colors.TextPrimary,
                     textAlign = TextAlign.Center
@@ -71,52 +75,58 @@ fun CreateGameDialog(
 
                 SpacerH(20)
 
-                        InputText(
-                            text = state.nameGame,
-                            placeholder = "Введите название игры",
-                            onValueChange = {
-                                viewModel.updateState(state.copy(nameGame = it)) },
-                            isPass = false
-                        )
+                InputText(
+                    text = state.nameGame,
+                    placeholder = "Введите название игры",
+                    onValueChange = {
+                        viewModel.updateState(state.copy(nameGame = it))
+                    },
+                    isPass = false
+                )
 
-                        SpacerH(16)
+                SpacerH(16)
 
-                        PlayerCountSelector(
-                            selectedCount = state.countPlayer,
-                            onCountChange = {
-                                viewModel.updateState(state.copy(countPlayer = it))
-                            }
-                        )
-
-                        SpacerH(24)
-
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            ButtonSmall(
-                                onClick = {
-                                    viewModel.updateState(state.copy(statusGame = "Created"))
-                                    onDismiss()
-                                },
-                                text = "Создать",
-                                type = false
-                            )
-
-                            SpacerW(5)
-
-                            ButtonSmall(
-                                onClick = {
-                                    viewModel.updateState(state.copy(username = ""))
-                                    onDismiss()
-                                },
-                                text = "Отмена",
-                                type = true
-                            )
+                if (isMultiplayer) {
+                    PlayerCountSelector(
+                        selectedCount = state.countPlayer,
+                        onCountChange = {
+                            viewModel.updateState(state.copy(countPlayer = it))
                         }
+                    )
+                }
 
+                SpacerH(24)
 
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    ButtonSmall(
+                        onClick = {
+                            // Создаем игру и генерируем поле
+                            val playerCount = if (isMultiplayer) state.countPlayer else 1
+                            gameViewModel.createGameAndBoard(
+                                gameName = state.nameGame.ifEmpty { "Игра ${System.currentTimeMillis()}" },
+                                countPlayers = playerCount,
+                                isMultiplayer = isMultiplayer,
+                                onGameCreated = onGameCreated
+                            )
+                        },
+                        text = "Создать",
+                        type = false
+                    )
+
+                    SpacerW(5)
+
+                    ButtonSmall(
+                        onClick = {
+                            viewModel.updateState(state.copy(nameGame = ""))
+                            onDismiss()
+                        },
+                        text = "Отмена",
+                        type = true
+                    )
+                }
             }
         }
     }

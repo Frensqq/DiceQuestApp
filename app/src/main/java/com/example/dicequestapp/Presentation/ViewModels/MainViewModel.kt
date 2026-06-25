@@ -15,7 +15,9 @@ import com.example.dicequestapp.Domain.UserRepository
 import com.example.dicequestapp.Presentation.Navigation.NavigationRoutes
 import com.example.dicequestapp.Presentation.State.MainState
 import com.example.dq_net_library.Data.Remoute.PBApiServis
+import com.example.dq_net_library.Domain.Model.Game.RequestCreateGame
 import com.example.dq_net_library.Domain.Model.NetworkResult
+import com.example.dq_net_library.Domain.Model.Player.CreatePlayer
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
@@ -171,4 +173,96 @@ class MainViewModel(private val UseCase: UseCase): ViewModel() {
             null
         }
     }
+
+    fun GreateGame(){
+        viewModelScope.launch {
+            PBApiServis.setToken(UserRepository.Token)
+            updateState(state.copy(isLoading = true, error = null))
+            try {
+                Log.e("GetUser Debug", "userId = ${UserRepository.UserId}")
+                when(val response = UseCase.createGame(
+                    request = RequestCreateGame(
+                        name = state.nameGame,
+                        players = listOf("${UserRepository.PlayerId}"),
+                        countPlayer = state.countPlayer,
+                        multiplayer = state.multiplayer,
+                        type = state.typeGame,
+                        status = "created",
+                        creator = UserRepository.PlayerId,
+                        start = "",
+                        end = "",
+                        countCell = 10,
+                        currentPlayer = UserRepository.PlayerId,
+                    )
+                )){
+                    is NetworkResult.Success -> {
+                        updateState(state.copy(isSuccess = true, Game = response.data))
+                        UserRepository.GameId = response.data.id
+                        Log.d("GetUser Debug" , response.data.id)
+                    }
+                    is NetworkResult.Error -> {
+                        updateState(state.copy(isLoading = false, error = response.errorResponse.message))
+                        Log.e("GetUser Error", response.errorResponse.message)
+
+                    }
+                    is NetworkResult.NoInternet -> {
+                        updateState(state.copy(isNotInternet = true))
+                        Log.e("GetUser NoInternet", state.error.toString())
+                    }
+
+                }
+                Log.d("GetUser", state.error.toString())
+            }
+            catch (e: Exception){
+                Log.e("GetUser ViewModel", e.message.toString())
+            }
+        }
+    }
+
+    fun GreatePlayer(){
+        viewModelScope.launch {
+            PBApiServis.setToken(UserRepository.Token)
+            updateState(state.copy(isLoading = true, error = null))
+            try {
+                Log.e("GetUser Debug", "userId = ${UserRepository.UserId}")
+                when(val response = UseCase.createPlayer(
+                    request = CreatePlayer(
+                        userId = UserRepository.UserId,
+                        BOT = state.BOT,
+                        state= state.statusGame,
+                        position = "1",
+                        protect = false,
+                        Bonus = "",
+                        Event = ""
+                    )
+                )){
+                    is NetworkResult.Success -> {
+                        updateState(state.copy(isSuccess = true, MyPlayer = response.data))
+                        UserRepository.PlayerId = response.data.id
+                        Log.d("GetUser Debug" , response.data.id)
+
+                    }
+                    is NetworkResult.Error -> {
+                        updateState(state.copy(isLoading = false, error = response.errorResponse.message))
+                        Log.e("GetUser Error", response.errorResponse.message)
+
+                    }
+                    is NetworkResult.NoInternet -> {
+                        updateState(state.copy(isNotInternet = true))
+                        Log.e("GetUser NoInternet", state.error.toString())
+                    }
+
+                }
+                Log.d("GetUser", state.error.toString())
+            }
+            catch (e: Exception){
+                Log.e("GetUser ViewModel", e.message.toString())
+            }
+        }
+    }
+
+
+
+
+
 }

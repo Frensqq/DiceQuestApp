@@ -17,10 +17,12 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
 import com.example.dicequestapp.Domain.UserRepository
+import com.example.dicequestapp.Presentation.Navigation.NavigationRoutes
 import com.example.dicequestapp.Presentation.Navigation.WithBottomNav
 import com.example.dicequestapp.Presentation.Screen.Main.Component.CreateGameDialog
 import com.example.dicequestapp.Presentation.Screen.Main.Component.EditProfileDialog
 import com.example.dicequestapp.Presentation.Screen.Main.Component.JoinGameDialog
+import com.example.dicequestapp.Presentation.ViewModels.GameViewModel
 import com.example.dicequestapp.Presentation.ViewModels.MainViewModel
 import com.example.dq_ui.Cards.CardMenu
 import com.example.dq_ui.Cards.CardUser
@@ -29,14 +31,17 @@ import com.example.dq_ui.R
 import com.example.dq_ui.UI.SpacerH
 import com.example.dq_ui.icons.BottomNavItem
 import com.example.htm.Presentation.viewModels.AuthViewModel
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
-fun MainScreen(navController: NavHostController, viewModel: MainViewModel){
+fun MainScreen(navController: NavHostController, viewModel: MainViewModel, gameViewModel: GameViewModel){
     val state = viewModel.state
     val UserData = state.User
 
     var showEditDialog by remember { mutableStateOf(false) }
     var showJoinDialog by remember { mutableStateOf(false) }
+    var showCreateGameDialog by remember { mutableStateOf(false) }
+    var isMultiplayer by remember { mutableStateOf(false) }
 
     var loading by remember { mutableStateOf(true) }
     LaunchedEffect(Unit) {
@@ -52,7 +57,6 @@ fun MainScreen(navController: NavHostController, viewModel: MainViewModel){
         } else null
     }
 
-
     WithBottomNav(navController, BottomNavItem.Home){
         Column(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally) {
@@ -65,7 +69,6 @@ fun MainScreen(navController: NavHostController, viewModel: MainViewModel){
                 painterResource(R.drawable.settings)
             )
 
-
             Column(modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.Center
             ) {
@@ -73,18 +76,18 @@ fun MainScreen(navController: NavHostController, viewModel: MainViewModel){
                     "Быстрая игра",
                     "Сыграйте в игру с ботом",
                     {
-                        viewModel.updateState(state.copy(multiplayer = false))
-                        showEditDialog = true
+                        isMultiplayer = false
+                        showCreateGameDialog = true
                     },
-                    painterResource( com.example.dicequestapp.R.drawable.one_player)
+                    painterResource(com.example.dicequestapp.R.drawable.one_player)
                 )
                 SpacerH(20)
                 CardMenu(
                     "Мультиплеер",
                     "Сыграйте в игру с друзьями от 2 до 4 человек",
                     {
-                        viewModel.updateState(state.copy(multiplayer = true))
-                        showEditDialog = true
+                        isMultiplayer = true
+                        showCreateGameDialog = true
                     },
                     painterResource(com.example.dicequestapp.R.drawable.multi_player)
                 )
@@ -100,19 +103,29 @@ fun MainScreen(navController: NavHostController, viewModel: MainViewModel){
                 CardMenu(
                     "Правила игры",
                     "Изучите правила и особенности игры перед началом",
-                    {
-
-                },
-                    painterResource(com.example.dicequestapp.R.drawable.rule))
-
-
+                    {},
+                    painterResource(com.example.dicequestapp.R.drawable.rule)
+                )
             }
-
         }
     }
 
-    if (showEditDialog) {
+    if (showCreateGameDialog) {
         CreateGameDialog(
+            navController,
+            viewModel = viewModel,
+            gameViewModel = gameViewModel,
+            isMultiplayer = isMultiplayer,
+            onDismiss = { showCreateGameDialog = false },
+            onGameCreated = {
+                showCreateGameDialog = false
+                navController.navigate(NavigationRoutes.START_GAME)
+            }
+        )
+    }
+
+    if (showEditDialog) {
+        EditProfileDialog(
             navController,
             viewModel = viewModel,
             onDismiss = { showEditDialog = false }
@@ -126,5 +139,4 @@ fun MainScreen(navController: NavHostController, viewModel: MainViewModel){
             onDismiss = { showJoinDialog = false }
         )
     }
-
 }

@@ -11,10 +11,12 @@ import com.example.dicequestapp.Domain.UserRepository
 import com.example.dicequestapp.Presentation.Screen.Auth.OtpRequest
 import com.example.dicequestapp.Presentation.Screen.Auth.OtpResponse
 import com.example.dicequestapp.Presentation.Screen.Auth.RegisterScreen
+import com.example.dicequestapp.Presentation.Screen.Game.StartGameScreen
 import com.example.dicequestapp.Presentation.Screen.Main.MainScreen
 import com.example.dicequestapp.Presentation.Screen.Main.ProfileScreen
 import com.example.dicequestapp.Presentation.Screen.System.NoInternetScreen
 import com.example.dicequestapp.Presentation.Screen.System.SplashScreen
+import com.example.dicequestapp.Presentation.ViewModels.GameViewModel
 import com.example.dicequestapp.Presentation.ViewModels.MainViewModel
 import com.example.htm.Presentation.viewModels.AuthViewModel
 import com.example.htm.Presentation.viewModels.SplashScreenViewModel
@@ -29,6 +31,7 @@ fun Navigation(isOnline: Boolean){
     val ViewModelSplash: SplashScreenViewModel = koinViewModel()
     val authViewModel: AuthViewModel = koinViewModel()
     val mainViewModel: MainViewModel = koinViewModel()
+    val gameViewModel: GameViewModel = koinViewModel()
 
     LaunchedEffect(isOnline) {
         delay(2000)
@@ -66,7 +69,7 @@ fun Navigation(isOnline: Boolean){
         }
 
         composable(NavigationRoutes.MAIN) {
-            MainScreen(NavController, mainViewModel)
+            MainScreen(NavController, mainViewModel, gameViewModel)
         }
 
         composable(NavigationRoutes.PROFILE) {
@@ -80,6 +83,11 @@ fun Navigation(isOnline: Boolean){
 
         composable(NavigationRoutes.OTP_REQUEST) {
             OtpRequest(NavController, authViewModel)
+        }
+
+        composable(NavigationRoutes.START_GAME) {
+
+            StartGameScreen(NavController, gameViewModel)
         }
 
         composable(NavigationRoutes.CHANGE_PASS) {
