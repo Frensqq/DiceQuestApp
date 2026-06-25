@@ -11,6 +11,7 @@ import com.example.dicequestapp.Domain.UserRepository
 import com.example.dicequestapp.Presentation.Screen.Auth.OtpRequest
 import com.example.dicequestapp.Presentation.Screen.Auth.OtpResponse
 import com.example.dicequestapp.Presentation.Screen.Auth.RegisterScreen
+import com.example.dicequestapp.Presentation.Screen.Game.GameBoardScreen
 import com.example.dicequestapp.Presentation.Screen.Game.StartGameScreen
 import com.example.dicequestapp.Presentation.Screen.Main.MainScreen
 import com.example.dicequestapp.Presentation.Screen.Main.ProfileScreen
@@ -88,6 +89,10 @@ fun Navigation(isOnline: Boolean){
         composable(NavigationRoutes.START_GAME) {
 
             StartGameScreen(NavController, gameViewModel)
+        }
+
+        composable(NavigationRoutes.GAME_BOARD) {
+            GameBoardScreen(NavController, gameViewModel)
         }
 
         composable(NavigationRoutes.CHANGE_PASS) {

@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
 import com.example.dicequestapp.Domain.UserRepository
+import com.example.dicequestapp.Presentation.Navigation.NavigationRoutes
 import com.example.dicequestapp.Presentation.Navigation.WithBottomNav
 import com.example.dicequestapp.Presentation.ViewModels.GameViewModel
 import com.example.dicequestapp.Presentation.ViewModels.MainViewModel
@@ -175,8 +176,10 @@ fun StartGameScreen(
             StartButton(
                 canStart = state.canStart,
                 onStart = {
-                    // TODO: Запуск игры
-                    viewModel.updateState(state.copy(gameStarted = true))
+                    // Переходим на экран игрового поля
+                    navController.navigate(NavigationRoutes.GAME_BOARD) {
+                        popUpTo(NavigationRoutes.START_GAME) { inclusive = true }
+                    }
                 }
             )
 

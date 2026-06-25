@@ -30,4 +30,6 @@ object NavigationRoutes {
 
     const val START_GAME = "StartGame"
 
+    const val GAME_BOARD = "GameBoard"
+
 }
