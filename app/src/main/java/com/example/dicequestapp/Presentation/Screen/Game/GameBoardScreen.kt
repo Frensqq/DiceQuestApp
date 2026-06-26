@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
@@ -25,6 +24,7 @@ import com.example.dicequestapp.Presentation.Navigation.WithBottomNav
 import com.example.dicequestapp.Presentation.Screen.Game.Component.GamePlayer
 import com.example.dicequestapp.Presentation.ViewModels.GameViewModel
 import com.example.dicequestapp.Presentation.ViewModels.MainViewModel
+import com.example.dq_net_library.Domain.Model.Cell.Cell
 import com.example.dq_ui.Button.ButtonBig
 import com.example.dq_ui.Field.GameCell
 import com.example.dq_ui.Field.GameFieldCell
@@ -38,10 +38,15 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun GameBoardScreen(
     navController: NavHostController,
-    viewModel: GameViewModel
+    viewModel: GameViewModel,
+    mainViewModel: MainViewModel
 ) {
     val state = viewModel.state
-    val mainViewModel: MainViewModel = koinViewModel()
+
+    // Фильтруем ячейки по gameId
+    val cellsForGame = remember(state.cells, state.gameId) {
+        state.cells.filter { it.gameId == state.gameId }
+    }
 
     val userState = mainViewModel.state
     val userAvatarUrl = userState.User?.let { user ->
@@ -50,18 +55,25 @@ fun GameBoardScreen(
         } else null
     }
 
-    val players = remember {
+    val players = remember(
+        state.player,
+        state.expectedPlayers,
+        state.isMultiplayer,
+        userState.User
+    ) {
         buildPlayersList(
-            state = state,
-            userName = userState.User?.userName ?: "Игрок",
-            avatarUrl = userAvatarUrl
+            state,
+            userState.User?.userName ?: "Игрок",
+            userAvatarUrl
         )
     }
 
-    // Создаем дорожку-змейку с разной длиной рядов
-    val rows = remember(state.cells, players) {
-        buildSnakeRows(state.cells, players)
+    // Строим карту поля по координатам из отфильтрованных ячеек
+    val board = remember(cellsForGame, players) {
+        buildBoard(cellsForGame, players)
     }
+    // Получаем все уникальные col из координат
+    val maxCols = 7 // Фиксированное количество колонок
 
     WithBottomNav(navController, BottomNavItem.Home) {
         Column(
@@ -104,7 +116,7 @@ fun GameBoardScreen(
 
             SpacerH(8)
 
-            // Игровое поле - ДОРОЖКА-ЗМЕЙКА
+            // Игровое поле - строго по координатам (row, col)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -120,32 +132,19 @@ fun GameBoardScreen(
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    items(rows.size) { rowIndex ->
-                        val row = rows[rowIndex]
+
+                    items(board) { row ->
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
 
-                            if (row.size == 1) {
+                            row.forEach { cell ->
 
-                                // номер короткого ряда: 0,1,2...
-                                val shortIndex = rowIndex / 2
-                                val rightSide = shortIndex % 2 == 0
+                                if (cell == null) {
 
-                                if (rightSide) {
-                                    // 6 пустых клеток + клетка
-                                    repeat(6) {
-                                        Box(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .aspectRatio(1f)
-                                        )
-                                    }
-
-                                    GameFieldCell(
-                                        cell = row.first(),
+                                    Box(
                                         modifier = Modifier
                                             .weight(1f)
                                             .aspectRatio(1f)
@@ -154,36 +153,7 @@ fun GameBoardScreen(
                                 } else {
 
                                     GameFieldCell(
-                                        cell = row.first(),
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .aspectRatio(1f)
-                                    )
-
-                                    repeat(6) {
-                                        Box(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .aspectRatio(1f)
-                                        )
-                                    }
-                                }
-
-                            } else {
-
-                                row.forEach { cell ->
-                                    GameFieldCell(
                                         cell = cell,
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .aspectRatio(1f)
-                                    )
-                                }
-
-                                // если последний ряд содержит меньше 7 клеток —
-                                // добавляем пустые места справа
-                                repeat(7 - row.size) {
-                                    Box(
                                         modifier = Modifier
                                             .weight(1f)
                                             .aspectRatio(1f)
@@ -271,69 +241,53 @@ private fun buildPlayersList(
     return players
 }
 
-/**
- * Создание рядов для дорожки-змейки
- * Ряды разной длины: полный ряд (7 клеток), одна клетка, полный ряд, одна клетка и т.д.
- * Одна клетка чередуется: справа → слева → справа → слева
- */
-private fun buildSnakeRows(
-    cells: List<com.example.dq_net_library.Domain.Model.Cell.Cell>,
+
+private const val COLS = 7
+
+private fun buildBoard(
+    cells: List<Cell>,
     players: List<GamePlayer>
-): List<List<GameCell>> {
+): List<List<GameCell?>> {
+
     if (cells.isEmpty()) return emptyList()
 
-    // Создаем ячейки с игроками
-    val gameCells = cells.mapIndexed { index, cell ->
-        val tokens = players
-            .filter { it.position == index }
-            .map { it.color }
+    // Один раз строим карту "позиция -> игроки"
+    val playersByPosition = players.groupBy { it.position }
 
-        val color = when (cell.type) {
-            "start" -> DiceQuestTheme.colors.Primary.copy(alpha = 0.3f)
-            "finish" -> DiceQuestTheme.colors.Primary.copy(alpha = 0.3f)
-            "bonus" -> Color(0xFF4CAF50).copy(alpha = 0.2f)
-            "penalty" -> Color(0xFFE53935).copy(alpha = 0.2f)
-            "protection" -> Color(0xFF2196F3).copy(alpha = 0.2f)
-            "event" -> Color(0xFFFFC107).copy(alpha = 0.2f)
-            else -> DiceQuestTheme.colors.Surface
+    // Группируем клетки по строкам
+    val rows = cells
+        .groupBy { it.row }
+        .toSortedMap()
+
+    return rows.values.map { rowCells ->
+
+        val boardRow = MutableList<GameCell?>(COLS) { null }
+
+        rowCells.forEach { cell ->
+
+            val tokens = playersByPosition[cell.number - 1]
+                ?.map { it.color }
+                ?: emptyList()
+
+            val color = when (cell.type) {
+                "start" -> DiceQuestTheme.colors.Primary.copy(alpha = 0.3f)
+                "finish" -> DiceQuestTheme.colors.Primary.copy(alpha = 0.3f)
+                "bonus" -> Color(0xFF4CAF50).copy(alpha = 0.2f)
+                "penalty" -> Color(0xFFE53935).copy(alpha = 0.2f)
+                "protection" -> Color(0xFF2196F3).copy(alpha = 0.2f)
+                "event" -> Color(0xFFFFC107).copy(alpha = 0.2f)
+                else -> DiceQuestTheme.colors.Surface
+            }
+
+            if (cell.col in 0 until COLS) {
+                boardRow[cell.col] = GameCell(
+                    index = cell.number,
+                    color = color,
+                    tokens = tokens
+                )
+            }
         }
 
-        GameCell(
-            index = cell.number + 1,
-            color = color,
-            tokens = tokens
-        )
+        boardRow
     }
-
-    // Строим ряды змейкой с разной длиной
-    val rows = mutableListOf<List<GameCell>>()
-    var currentIndex = 0
-    val totalCells = gameCells.size
-    var isFullRow = true // Начинаем с полного ряда
-
-    while (currentIndex < totalCells) {
-        val rowSize = if (isFullRow) {
-            // Полный ряд - 7 клеток
-            minOf(7, totalCells - currentIndex)
-        } else {
-            // Короткий ряд - 1 клетка (поворот)
-            1
-        }
-
-        val row = gameCells.subList(currentIndex, currentIndex + rowSize)
-
-        // Для нечетных рядов (индекс 1, 3, 5...) реверсируем для змейки
-        if (rows.size % 2 == 1) {
-            rows.add(row.reversed())
-        } else {
-            rows.add(row)
-        }
-
-        currentIndex += rowSize
-        isFullRow = !isFullRow // Чередуем полный и короткий ряд
-    }
-
-    // Если последний ряд короткий и осталось место, добавляем еще клетки
-    // Но для 39 клеток (35 + 4) у нас должно получиться ровно
-    return rows
 }
