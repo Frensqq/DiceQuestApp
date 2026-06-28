@@ -5,7 +5,7 @@ import com.example.dq_net_library.Domain.Model.Game.Game
 import com.example.dq_net_library.Domain.Model.Player.Player
 
 data class GameState (
-    var game: Game? = null,
+
     var gameId: String = "",
 
     // Информация об игроке
@@ -13,7 +13,7 @@ data class GameState (
     var playerId: String = "",
 
     // Ячейки поля
-    var cells: List<Cell> = emptyList(),
+
     var isBoardGenerated: Boolean = false,
 
     // Статусы
@@ -34,5 +34,17 @@ data class GameState (
 
     // Состояние игры
     var canStart: Boolean = false,
-    var gameStarted: Boolean = false
+    var gameStarted: Boolean = false,
+
+
+
+    val game: Game? = null,
+    val players: List<Player> = emptyList(),
+    val currentPlayer: Player? = null,
+    val cells: List<Cell> = emptyList(),
+    val isMyTurn: Boolean = false,
+    val isHost: Boolean = false,
+    val diceValue: Int = 0,
+    val canRollDice: Boolean = true,
+    val winner: Player? = null
 )

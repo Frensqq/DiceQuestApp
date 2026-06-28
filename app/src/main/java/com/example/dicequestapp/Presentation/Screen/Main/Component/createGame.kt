@@ -21,7 +21,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavHostController
-import com.example.dicequestapp.Presentation.ViewModels.GameViewModel
 import com.example.dicequestapp.Presentation.ViewModels.MainViewModel
 import com.example.dq_ui.Button.ButtonSmall
 import com.example.dq_ui.Inputs.InputText
@@ -34,13 +33,11 @@ import com.example.dq_ui.UI.SpacerW
 fun CreateGameDialog(
     navHostController: NavHostController,
     viewModel: MainViewModel,
-    gameViewModel: GameViewModel,
     isMultiplayer: Boolean,
     onDismiss: () -> Unit,
-    onGameCreated: () -> Unit
+    onGameCreated: (gameId: String) -> Unit
 ) {
     val state = viewModel.state
-    val context = LocalContext.current
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -103,14 +100,18 @@ fun CreateGameDialog(
                 ) {
                     ButtonSmall(
                         onClick = {
-                            // Создаем игру и генерируем поле
-                            val playerCount = if (isMultiplayer) state.countPlayer else 1
-                            gameViewModel.createGameAndBoard(
-                                gameName = state.nameGame.ifEmpty { "Игра ${System.currentTimeMillis()}" },
-                                countPlayers = playerCount,
-                                isMultiplayer = isMultiplayer,
-                                onGameCreated = onGameCreated
-                            )
+                            if (isMultiplayer) {
+                                // TODO: Мультиплеер (будет позже)
+                                // viewModel.createMultiplayerGame(...)
+                            } else {
+                                // Одиночная игра с ботами
+                                viewModel.createSinglePlayerGame(
+                                    gameName = state.nameGame.ifEmpty { "Игра ${System.currentTimeMillis()}" },
+                                    botCount = 3
+                                ) { gameId ->
+                                    onGameCreated(gameId)
+                                }
+                            }
                         },
                         text = "Создать",
                         type = false

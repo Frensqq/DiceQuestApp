@@ -18,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.lifecycleScope
+import com.example.dicequestapp.DI.gameModule
 import com.example.dicequestapp.DI.networkModule
 import com.example.dicequestapp.Domain.UserRepository
 import com.example.dicequestapp.Presentation.Navigation.Navigation
@@ -52,6 +53,7 @@ class MainActivity : ComponentActivity() {
         startKoin {
             androidContext(this@MainActivity)
             modules(networkModule)
+            modules(gameModule)
         }
 
         UserRepository.init(this)

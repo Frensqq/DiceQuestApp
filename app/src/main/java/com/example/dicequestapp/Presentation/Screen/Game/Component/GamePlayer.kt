@@ -9,6 +9,5 @@ data class GamePlayer(
     val userName: String,
     val avatarUrl: String?,
     val isBot: Boolean,
-    val position: Int = 0,
     val color: Color
 )

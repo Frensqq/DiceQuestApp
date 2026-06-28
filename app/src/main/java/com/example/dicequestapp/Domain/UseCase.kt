@@ -158,8 +158,8 @@ class UseCase(private val  Repository: Repository) {
     suspend fun getCell(id: String): NetworkResult<Cell>{
         return  Repository.getCell(id)
     }
-    suspend fun getCells(filter: String? = null): NetworkResult<ResponsesCell>{
-        return  Repository.getCells(filter)
+    suspend fun getCells(filter: String? = null,page: Int? = null,perPage: Int? = null): NetworkResult<ResponsesCell>{
+        return  Repository.getCells(filter, page = page, perPage = perPage )
     }
     suspend fun deleteCell(id: String): NetworkResult<Unit>{
         return  Repository.deleteCell(id)

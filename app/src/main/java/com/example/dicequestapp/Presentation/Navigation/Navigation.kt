@@ -92,7 +92,11 @@ fun Navigation(isOnline: Boolean){
         }
 
         composable(NavigationRoutes.GAME_BOARD) {
-            GameBoardScreen(NavController, gameViewModel, mainViewModel)
+            GameBoardScreen(
+                navController = NavController,
+                viewModel = gameViewModel,
+                mainViewModel = mainViewModel
+            )
         }
 
         composable(NavigationRoutes.CHANGE_PASS) {

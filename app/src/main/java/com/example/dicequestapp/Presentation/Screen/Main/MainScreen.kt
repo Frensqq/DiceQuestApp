@@ -112,18 +112,16 @@ fun MainScreen(navController: NavHostController, viewModel: MainViewModel, gameV
 
     if (showCreateGameDialog) {
         CreateGameDialog(
-            navController,
+            navHostController = navController,
             viewModel = viewModel,
-            gameViewModel = gameViewModel,
             isMultiplayer = isMultiplayer,
             onDismiss = { showCreateGameDialog = false },
-            onGameCreated = {
+            onGameCreated = { gameId ->
                 showCreateGameDialog = false
-                navController.navigate(NavigationRoutes.START_GAME)
+                navController.navigate(NavigationRoutes.GAME_BOARD)
             }
         )
     }
-
     if (showEditDialog) {
         EditProfileDialog(
             navController,
