@@ -17,7 +17,7 @@ class SplashScreenViewModel(): ViewModel() {
             Log.d("Splash", UserRepository.Act.toString())
 
                 if (UserRepository.Act) {
-                    navHostController.navigate(NavigationRoutes.AUTH)
+                    navHostController.navigate(NavigationRoutes.MAIN)
                 } else {
                     navHostController.navigate(NavigationRoutes.AUTH)
                 }

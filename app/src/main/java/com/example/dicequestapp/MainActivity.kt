@@ -18,10 +18,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.lifecycleScope
+import com.example.dicequestapp.DI.gameModule
 import com.example.dicequestapp.DI.networkModule
 import com.example.dicequestapp.Domain.UserRepository
 import com.example.dicequestapp.Presentation.Navigation.Navigation
-import com.example.dicequestapp.ui.theme.DiceQuestAppTheme
 import com.example.dq_net_library.Network.NetworkMonitor
 import com.example.dq_ui.UI.DiceQuestTheme
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -53,6 +53,7 @@ class MainActivity : ComponentActivity() {
         startKoin {
             androidContext(this@MainActivity)
             modules(networkModule)
+            modules(gameModule)
         }
 
         UserRepository.init(this)

@@ -19,6 +19,13 @@ object UserRepository {
         get() = actSystem.getString("UserId", "")!!
         set(value) = actSystem.edit().putString("UserId", value).apply()
 
+    var PlayerId: String
+        get() = actSystem.getString("PlayerId", "")!!
+        set(value) = actSystem.edit().putString("PlayerId", value).apply()
+    var GameId: String
+        get() = actSystem.getString("GameId", "")!!
+        set(value) = actSystem.edit().putString("GameId", value).apply()
+
     var Token: String
         get() = actSystem.getString("Token", "")!!
         set(value) = actSystem.edit().putString("Token", value).apply()

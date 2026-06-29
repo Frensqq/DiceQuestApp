@@ -27,4 +27,9 @@ object NavigationRoutes {
     const val SETTINGS = "Settings"
 
     const val HISTORY = "History"
+
+    const val START_GAME = "StartGame"
+
+    const val GAME_BOARD = "GameBoard"
+
 }

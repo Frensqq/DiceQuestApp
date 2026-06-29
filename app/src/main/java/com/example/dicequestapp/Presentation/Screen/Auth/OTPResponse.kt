@@ -42,7 +42,7 @@ fun OtpResponse(navController: NavHostController, viewModel: AuthViewModel) {
         )
         SpacerH(40)
 
-        Text("Введите сообщение из email",
+        Text("Введите код из email",
             style = DiceQuestTheme.typography.displayLarge,
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center,
