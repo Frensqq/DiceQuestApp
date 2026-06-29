@@ -49,6 +49,7 @@ import com.example.dq_ui.R
 import com.example.dq_ui.UI.DiceQuestTheme
 import com.example.dq_ui.UI.SpacerH
 import com.example.dq_ui.icons.BottomNavItem
+import kotlinx.coroutines.delay
 
 private const val COLS = 7
 
@@ -81,6 +82,7 @@ private fun getNotificationIcon(title: String): Int {
         "защита" -> R.drawable.shield
         "событие" -> R.drawable.event
         "победа" -> R.drawable.first_player
+        "поражение" -> R.drawable.cross
         else -> R.drawable.bonus
     }
 }
@@ -116,174 +118,232 @@ fun GameBoardScreen(
         buildBoard(state.cells, state.players, playerColors)
     }
 
-    if (state.showNotification) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.5f))
-                .clickable(
-                    indication = null,
-                    interactionSource = remember { MutableInteractionSource() }
-                ) {
-                    viewModel.dismissNotification()
-                },
-            contentAlignment = Alignment.Center
-        ) {
-            CardEvents(
-                text = state.notificationTitle,
-                nameEvent = state.notificationName,
-                textIventPreview = state.notificationValue.takeIf { it.isNotEmpty() },
-                imageIventPreview = painterResource(getNotificationIcon(state.notificationTitle))
-            )
-        }
-    }
+    val showNotification = state.showNotification
+    val notificationTitle = state.notificationTitle
+    val notificationName = state.notificationName
+    val notificationValue = state.notificationValue
 
-    WithBottomNav(navController, BottomNavItem.Home) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            SpacerH(10)
+    Box(modifier = Modifier.fillMaxSize()) {
 
-            Header(
-                text = "Игровое поле",
-                leadingIcon = painterResource(R.drawable.arrow_left),
-                trailingIcon = null,
-                leadingOnClick = { navController.popBackStack() },
-                {}
-            )
-
-            SpacerH(8)
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                Text(
-                    text = "Ход: ${state.currentPlayer?.let { if (it.isBot) "Бот" else "Игрок" } ?: "—"}",
-                    style = DiceQuestTheme.typography.titleMedium,
-                    color = DiceQuestTheme.colors.TextPrimary
-                )
-                Text(
-                    text = "Последний бросок: ${if (state.diceValue > 0) state.diceValue else "-"}",
-                    style = DiceQuestTheme.typography.titleMedium,
-                    color = DiceQuestTheme.colors.TextPrimary
-                )
-            }
-
-            SpacerH(8)
-
-            Box(
+        WithBottomNav(navController, BottomNavItem.Home) {
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .background(
-                        DiceQuestTheme.colors.SurfaceVariant.copy(alpha = 0.3f),
-                        shape = RoundedCornerShape(16.dp)
-                    )
-                    .padding(8.dp)
+                    .fillMaxSize()
+                    .padding(horizontal = 12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+
+                SpacerH(10)
+
+                Header(
+                    text = "Игровое поле",
+                    leadingIcon = painterResource(R.drawable.arrow_left),
+                    trailingIcon = null,
+                    leadingOnClick = { navController.popBackStack() },
+                    {}
+                )
+
+                SpacerH(8)
+
+                // ===== ВЕРХНЯЯ ПАНЕЛЬ =====
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    items(board) { row ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            row.forEach { cell ->
-                                if (cell == null) {
-                                    Box(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .aspectRatio(1f)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        val currentPlayerColor = state.currentPlayer?.let { playerColors[it.id] } ?: Color.Gray
+                        Box(
+                            modifier = Modifier
+                                .size(20.dp)
+                                .background(currentPlayerColor, shape = CircleShape)
+                                .border(1.5.dp, DiceQuestTheme.colors.TextSecondary.copy(alpha = 0.3f), shape = CircleShape)
+                        )
+                        Text(
+                            text = state.currentPlayer?.let {
+                                if (it.isBot) "Бот" else "Игрок"
+                            } ?: "—",
+                            style = DiceQuestTheme.typography.titleMedium,
+                            color = DiceQuestTheme.colors.TextPrimary
+                        )
+                    }
+                }
+
+
+                SpacerH(8)
+
+                // ===== ИГРОВОЕ ПОЛЕ =====
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .background(
+                            DiceQuestTheme.colors.SurfaceVariant.copy(alpha = 0.3f),
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                        .padding(8.dp)
+                ) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        items(board) { row ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                row.forEach { cell ->
+                                    if (cell == null) {
+                                        Box(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .aspectRatio(1f)
+                                        )
+                                    } else {
+                                        GameFieldCell(
+                                            cell = cell,
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .aspectRatio(1f)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                SpacerH(8)
+
+                // ===== КУБИК + ЛОГ =====
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(110.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Dice(
+                            modifier = Modifier.size(80.dp),
+                            isEnabled = state.canRollDice,
+                            onRollComplete = { diceValue ->
+                                val playerId = state.currentPlayer?.id
+                                if (playerId != null) {
+                                    viewModel.makeTurn(playerId, diceValue)
+                                }
+                            }
+                        )
+
+                        if (state.isTurnProcessing) {
+                            Text(
+                                text = "Загрузка...",
+                                style = DiceQuestTheme.typography.bodySmall,
+                                color = DiceQuestTheme.colors.Primary
+                            )
+                        }
+                        LaunchedEffect(state.isGameFinished) {
+                            if (state.isGameFinished) {
+                                val winner = state.winner
+                                val isPlayerWin = winner?.id == state.player?.id
+
+                                if (isPlayerWin) {
+                                    viewModel.showNotification(
+                                        title = "Победа",
+                                        text = "Вы победили!",
+                                        value = "0.0"
                                     )
                                 } else {
-                                    GameFieldCell(
-                                        cell = cell,
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .aspectRatio(1f)
+                                    viewModel.showNotification(
+                                        title = "Поражение",
+                                        text = "Вы проиграли!",
+                                        value = "0.0"
+                                    )
+                                }
+
+                                delay(3000L)
+                                viewModel.finishGameAndExit(navController)
+                            }
+                        }
+
+                        val currentPlayerColor = state.currentPlayer?.let { playerColors[it.id] } ?: Color.Gray
+                        Box(
+                            modifier = Modifier
+                                .size(14.dp)
+                                .background(currentPlayerColor, shape = CircleShape)
+                                .border(1.5.dp, DiceQuestTheme.colors.TextSecondary.copy(alpha = 0.3f), shape = CircleShape)
+                        )
+                    }
+
+                    // ===== ЛОГ =====
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .background(
+                                DiceQuestTheme.colors.SurfaceVariant.copy(alpha = 0.3f),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            .padding(6.dp)
+                    ) {
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            Text(
+                                text = "Лог игры",
+                                style = DiceQuestTheme.typography.labelSmall,
+                                color = DiceQuestTheme.colors.TextSecondary
+                            )
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                reverseLayout = true
+                            ) {
+                                items(state.gameLog.reversed()) { logMessage ->
+                                    Text(
+                                        text = logMessage,
+                                        style = DiceQuestTheme.typography.bodySmall.copy(fontSize = 10.sp),
+                                        color = getLogColor(logMessage),
+                                        modifier = Modifier.padding(vertical = 1.dp)
                                     )
                                 }
                             }
                         }
                     }
                 }
+
+                SpacerH(16)
             }
+        }
 
-            SpacerH(8)
-
-            Row(
+        // ===== УВЕДОМЛЕНИЕ =====
+        if (showNotification) {
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(110.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.6f))
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    ) {
+                        viewModel.dismissNotification()
+                    },
+                contentAlignment = Alignment.Center
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Dice(
-                        modifier = Modifier.size(65.dp),
-                        isEnabled = state.canRollDice,
-                        onResult = { diceValue ->
-                            val playerId = state.currentPlayer?.id
-                            if (playerId != null) {
-                                viewModel.makeTurn(playerId, diceValue)
-                            }
-                        }
-                    )
-
-                    val currentPlayerColor = state.currentPlayer?.let { playerColors[it.id] } ?: Color.Gray
-                    Box(
-                        modifier = Modifier
-                            .size(14.dp)
-                            .background(currentPlayerColor, shape = CircleShape)
-                            .border(1.5.dp, DiceQuestTheme.colors.TextSecondary.copy(alpha = 0.3f), shape = CircleShape)
-                    )
-                }
-
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .background(
-                            DiceQuestTheme.colors.SurfaceVariant.copy(alpha = 0.3f),
-                            shape = RoundedCornerShape(12.dp)
-                        )
-                        .padding(6.dp)
-                ) {
-                    Column(modifier = Modifier.fillMaxSize()) {
-                        Text(
-                            text = "Лог игры",
-                            style = DiceQuestTheme.typography.labelSmall,
-                            color = DiceQuestTheme.colors.TextSecondary,
-                            modifier = Modifier.padding(bottom = 2.dp)
-                        )
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            reverseLayout = true
-                        ) {
-                            items(state.gameLog.reversed()) { logMessage ->
-                                Text(
-                                    text = logMessage,
-                                    style = DiceQuestTheme.typography.bodySmall.copy(fontSize = 10.sp),
-                                    color = getLogColor(logMessage),
-                                    modifier = Modifier.padding(vertical = 1.dp)
-                                )
-                            }
-                        }
-                    }
-                }
+                CardEvents(
+                    text = notificationTitle,
+                    nameEvent = notificationName,
+                    textIventPreview = notificationValue.ifEmpty { null },
+                    imageIventPreview = painterResource(getNotificationIcon(notificationTitle))
+                )
             }
-
-            SpacerH(16)
         }
     }
 }

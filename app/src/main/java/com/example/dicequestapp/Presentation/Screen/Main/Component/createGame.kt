@@ -8,9 +8,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,9 +44,12 @@ fun CreateGameDialog(
     onGameCreated: (gameId: String) -> Unit
 ) {
     val state = viewModel.state
+    var isLoading by remember { mutableStateOf(false) }
 
     Dialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = {
+            if (!isLoading) onDismiss()
+        },
         properties = DialogProperties(
             usePlatformDefaultWidth = false,
             decorFitsSystemWindows = false
@@ -64,69 +73,98 @@ fun CreateGameDialog(
                 val typeText = if (isMultiplayer) "многопользовательской" else "одиночной"
 
                 Text(
-                    text = "Создание $typeText игры",
+                    text = if (isLoading) "Создание игры..." else "Создание $typeText игры",
                     style = DiceQuestTheme.typography.headlineLarge,
                     color = DiceQuestTheme.colors.TextPrimary,
                     textAlign = TextAlign.Center
                 )
 
-                SpacerH(20)
+                if (isLoading) {
+                    SpacerH(20)
 
-                InputText(
-                    text = state.nameGame,
-                    placeholder = "Введите название игры",
-                    onValueChange = {
-                        viewModel.updateState(state.copy(nameGame = it))
-                    },
-                    isPass = false
-                )
-
-                SpacerH(16)
-
-                if (isMultiplayer) {
-                    PlayerCountSelector(
-                        selectedCount = state.countPlayer,
-                        onCountChange = {
-                            viewModel.updateState(state.copy(countPlayer = it))
-                        }
-                    )
-                }
-
-                SpacerH(24)
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    ButtonSmall(
-                        onClick = {
-                            if (isMultiplayer) {
-                                // TODO: Мультиплеер (будет позже)
-                                // viewModel.createMultiplayerGame(...)
-                            } else {
-                                // Одиночная игра с ботами
-                                viewModel.createSinglePlayerGame(
-                                    gameName = state.nameGame.ifEmpty { "Игра ${System.currentTimeMillis()}" },
-                                    botCount = 3
-                                ) { gameId ->
-                                    onGameCreated(gameId)
-                                }
-                            }
-                        },
-                        text = "Создать",
-                        type = false
+                    CircularProgressIndicator(
+                        color = DiceQuestTheme.colors.Primary,
+                        modifier = Modifier.size(48.dp)
                     )
 
-                    SpacerW(5)
+                    SpacerH(16)
+
+                    Text(
+                        text = "Пожалуйста, подождите...",
+                        style = DiceQuestTheme.typography.bodyMedium,
+                        color = DiceQuestTheme.colors.TextSecondary,
+                        textAlign = TextAlign.Center
+                    )
+
+                    SpacerH(24)
 
                     ButtonSmall(
                         onClick = {
-                            viewModel.updateState(state.copy(nameGame = ""))
+                            isLoading = false
                             onDismiss()
                         },
                         text = "Отмена",
                         type = true
                     )
+                } else {
+                    SpacerH(20)
+
+                    InputText(
+                        text = state.nameGame,
+                        placeholder = "Введите название игры",
+                        onValueChange = {
+                            viewModel.updateState(state.copy(nameGame = it))
+                        },
+                        isPass = false
+                    )
+
+                    SpacerH(16)
+
+                    if (isMultiplayer) {
+                        PlayerCountSelector(
+                            selectedCount = state.countPlayer,
+                            onCountChange = {
+                                viewModel.updateState(state.copy(countPlayer = it))
+                            }
+                        )
+                    }
+
+                    SpacerH(24)
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        ButtonSmall(
+                            onClick = {
+                                isLoading = true
+                                if (isMultiplayer) {
+                                    // viewModel.createMultiplayerGame(...)
+                                } else {
+                                    viewModel.createSinglePlayerGame(
+                                        gameName = state.nameGame.ifEmpty { "Игра ${System.currentTimeMillis()}" },
+                                        botCount = 3
+                                    ) { gameId ->
+                                        isLoading = false
+                                        onGameCreated(gameId)
+                                    }
+                                }
+                            },
+                            text = "Создать",
+                            type = false
+                        )
+
+                        SpacerW(5)
+
+                        ButtonSmall(
+                            onClick = {
+                                viewModel.updateState(state.copy(nameGame = ""))
+                                onDismiss()
+                            },
+                            text = "Отмена",
+                            type = true
+                        )
+                    }
                 }
             }
         }

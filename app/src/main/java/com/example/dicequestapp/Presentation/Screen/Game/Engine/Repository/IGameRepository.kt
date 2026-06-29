@@ -13,6 +13,10 @@ interface IGameRepository {
     suspend fun updateCell(cell: Cell): Result<Cell>
     suspend fun addPlayerToGame(gameId: String, player: Player): Result<Game>
 
+
+    suspend fun deletePlayer(playerId: String): Result<Unit>
+    suspend fun deleteCell(cellId: String): Result<Unit>
+
     // Для онлайн режима
     suspend fun subscribeToGame(gameId: String, callback: (Game) -> Unit)
     suspend fun unsubscribeFromGame(gameId: String)

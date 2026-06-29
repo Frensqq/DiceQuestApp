@@ -1,6 +1,7 @@
 package com.example.dicequestapp.Presentation.Screen.Game.Engine
 
 import android.util.Log
+import com.example.dicequestapp.Presentation.Screen.Game.Component.GameNotification
 import com.example.dicequestapp.Presentation.Screen.Game.Engine.Repository.IGameRepository
 import com.example.dicequestapp.Presentation.State.GameState
 import com.example.dq_net_library.Domain.Model.Cell.Cell
@@ -10,7 +11,7 @@ import kotlinx.coroutines.delay
 import kotlin.random.Random
 
 class GameEngine(
-    private val repository: IGameRepository,
+    private var repository: IGameRepository,
     private val isHost: Boolean = false
 ) {
 
@@ -20,6 +21,8 @@ class GameEngine(
     private var currentPlayerIndex: Int = 0
     private var cellsByNumber: Map<Int, Cell> = emptyMap()
     private val gameLog = mutableListOf<String>()
+
+    private var notification: GameNotification? = null
 
     private fun addLog(message: String) {
         gameLog.add(message)
@@ -81,6 +84,14 @@ class GameEngine(
                     if (it.id == player.id) it.copy(position = newPos) else it
                 }
                 addLog("$displayName (Бонус) +$bonus")
+
+                if (!player.isBot) {
+                    notify(
+                        title = "Бонус",
+                        text = "Вы получили бонус",
+                        value = "+$bonus"
+                    )
+                }
             }
             "penalty" -> {
                 if (player.shield) {
@@ -96,12 +107,27 @@ class GameEngine(
                     if (it.id == player.id) it.copy(position = newPos) else it
                 }
                 addLog("$displayName (Штраф) $penalty")
+
+                if (!player.isBot) {
+                    notify(
+                        title = "Штраф",
+                        text = "Вы потеряли ходы",
+                        value = "$penalty"
+                    )
+                }
             }
             "protection" -> {
                 players = players.map {
                     if (it.id == player.id) it.copy(shield = true) else it
                 }
                 addLog("$displayName (Защита) получил защиту")
+
+                if (!player.isBot) {
+                    notify(
+                        title = "Защита",
+                        text = "Вы получили щит"
+                    )
+                }
             }
             "event" -> {
                 if (player.shield) {
@@ -109,6 +135,12 @@ class GameEngine(
                         if (it.id == player.id) it.copy(shield = false) else it
                     }
                     addLog("$displayName (Защита) сработала")
+                    if (!player.isBot) {
+                        notify(
+                            title = "Защита",
+                            text = "Щит защитил вас"
+                        )
+                    }
                     return
                 }
                 val eventValue = listOf("+3", "+5", "-3", "-5").random().toIntOrNull() ?: 0
@@ -118,12 +150,28 @@ class GameEngine(
                 }
                 val type = if (eventValue > 0) "Бонус" else "Штраф"
                 addLog("$displayName (Событие) $type $eventValue")
+                if (!player.isBot) {
+                    notify(
+                        title = "Событие",
+                        text = if (eventValue > 0)
+                            "Вы продвинулись вперед"
+                        else
+                            "Вы откатились назад",
+                        value = eventValue.toString()
+                    )
+                }
             }
             "finish" -> {
                 players = players.map {
                     if (it.id == player.id) it.copy(finished = true) else it
                 }
                 addLog("$displayName (Финиш) финишировал")
+                if (!player.isBot) {
+                    notify(
+                        title = "Победа",
+                        text = "Поздравляем!"
+                    )
+                }
             }
         }
 
@@ -140,6 +188,7 @@ class GameEngine(
         game = game?.copy(diceValue = value.toDouble())
         return value
     }
+
 
     suspend fun makeTurn(playerId: String, diceValue: Int) {
         val player = players.find { it.id == playerId } ?: return
@@ -160,10 +209,44 @@ class GameEngine(
             addLog("$displayName победил")
             game = game?.copy(status = "finished")
             repository.updateGame(game!!)
+            // Сохраняем победителя в отдельную переменную
+            winner = updatedPlayer
             return
         }
 
         nextTurn()
+    }
+
+
+    private var winner: Player? = null
+
+    fun getState(): GameState {
+        val currentPlayer = players.getOrNull(currentPlayerIndex)
+        val isMyTurn = currentPlayer?.id == game?.currentPlayer
+
+        // Находим игрока-человека (не бота)
+        val humanPlayer = players.find { !it.isBot }
+
+        // Проверяем, является ли humanPlayer создателем
+        val isCreator = game?.creator == humanPlayer?.id
+
+        return GameState(
+            game = game,
+            players = players,
+            player = humanPlayer,
+            playerId = humanPlayer?.id ?: "",
+            currentPlayer = currentPlayer,
+            cells = cells,
+            isMyTurn = isMyTurn,
+            isHost = isHost,
+            diceValue = game?.diceValue?.toInt() ?: 0,
+            canRollDice = isMyTurn && game?.status == "playing",
+            winner = winner,
+            isGameFinished = game?.status == "finished",
+            gameId = game?.id ?: "",
+            gameLog = gameLog.toList(),
+            isCreator = isCreator
+        )
     }
 
     private suspend fun nextTurn() {
@@ -215,22 +298,66 @@ class GameEngine(
         gameLog.clear()
     }
 
-    fun getState(): GameState {
-        val currentPlayer = players.getOrNull(currentPlayerIndex)
-        val isMyTurn = currentPlayer?.id == game?.currentPlayer
+    private fun notify(
+        title: String,
+        text: String,
+        value: String = ""
+    ) {
+        notification = GameNotification(title, text, value)
+    }
 
-        return GameState(
-            game = game,
-            players = players,
-            currentPlayer = currentPlayer,
-            cells = cells,
-            isMyTurn = isMyTurn,
-            isHost = isHost,
-            diceValue = game?.diceValue?.toInt() ?: 0,
-            canRollDice = isMyTurn && game?.status == "playing",
-            winner = players.find { it.finished },
-            gameId = game?.id ?: "",
-            gameLog = gameLog.toList()
-        )
+    fun consumeNotification(): GameNotification? {
+        val result = notification
+        notification = null
+        return result
+    }
+
+    suspend fun deleteGameData() {
+        try {
+            val gameId = game?.id ?: return
+
+            Log.d("GameEngine", "=== Удаление клеток и игроков ===")
+            Log.d("GameEngine", "Игроков для удаления: ${players.size}")
+            Log.d("GameEngine", "Клеток для удаления: ${cells.size}")
+
+            // 1. Удаляем всех игроков
+            for (player in players) {
+                Log.d("GameEngine", "Удаляем игрока: ${player.id}")
+                repository.deletePlayer(player.id)
+                Log.d("GameEngine", "Игрок удалён: ${player.id}")
+            }
+
+            // 2. Удаляем все клетки
+            for (cell in cells) {
+                Log.d("GameEngine", "Удаляем клетку: ${cell.id}")
+                repository.deleteCell(cell.id)
+                Log.d("GameEngine", "Клетка удалена: ${cell.id}")
+            }
+
+            // 3. Очищаем локальные данные
+            players = emptyList()
+            cells = emptyList()
+            cellsByNumber = emptyMap()
+            gameLog.clear()
+            winner = null
+
+            Log.d("GameEngine", "=== Все клетки и игроки удалены ===")
+
+        } catch (e: Exception) {
+            Log.e("GameEngine", "Ошибка при удалении данных: ${e.message}", e)
+        }
+    }
+
+    /**
+     * Удаление игрока по ID
+     */
+    suspend fun deletePlayer(playerId: String) {
+        try {
+            repository.deletePlayer(playerId)
+            players = players.filter { it.id != playerId }
+            Log.d("GameEngine", "Игрок удалён: $playerId")
+        } catch (e: Exception) {
+            Log.e("GameEngine", "Ошибка при удалении игрока: ${e.message}", e)
+        }
     }
 }

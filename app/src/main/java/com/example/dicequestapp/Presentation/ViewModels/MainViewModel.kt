@@ -246,7 +246,7 @@ class MainViewModel(private val UseCase: UseCase): ViewModel() {
                     multiplayer = false,
                     type = "single",
                     status = "waiting",
-                    creator = creatorPlayerId,
+                    creator = UserRepository.PlayerId,
                     start = "",
                     end = "",
                     countCell = 70.0,
@@ -280,6 +280,7 @@ class MainViewModel(private val UseCase: UseCase): ViewModel() {
                             start = "",
                             end = "",
                             countCell = 70.0,
+                            creator = UserRepository.PlayerId,
                             currentPlayer = playerIds.firstOrNull() ?: "",
                             currentTurn = 0.0,
                             diceValue = 0.0
@@ -404,6 +405,190 @@ class MainViewModel(private val UseCase: UseCase): ViewModel() {
         }
     }
 
+
+    // MainViewModel.kt
+
+    /**
+     * Создание онлайн игры (хост)
+     */
+    fun createMultiplayerGame(
+        gameName: String,
+        maxPlayers: Int = 4,
+        onGameCreated: (gameId: String) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                Log.d("CreateGame", "=== СОЗДАНИЕ ОНЛАЙН ИГРЫ ===")
+
+                // 1. Создаём игрока-человека
+                val playerResult = UseCase.createPlayer(
+                    CreatePlayer(
+                        userId = UserRepository.UserId,
+                        gameId = "",
+                        isBot = false,
+                        position = 0,
+                        shield = false,
+                        finished = false,
+                        turnOrder = 0
+                    )
+                )
+                if (playerResult !is NetworkResult.Success) {
+                    Log.e("CreateGame", "Ошибка создания игрока")
+                    return@launch
+                }
+                val player = playerResult.data
+                UserRepository.PlayerId = player.id
+                Log.d("CreateGame", "Игрок создан: ${player.id}")
+
+                // 2. Создаём игру с multiplayer = true
+                val gameRequest = RequestCreateGame(
+                    name = gameName,
+                    players = listOf(player.id),
+                    countPlayer = maxPlayers.toDouble(),
+                    multiplayer = true,
+                    type = "multiplayer",
+                    status = "waiting",
+                    creator = player.id,
+                    start = "",
+                    end = "",
+                    countCell = 70.0,
+                    currentPlayer = player.id,
+                    currentTurn = 0.0,
+                    diceValue = 0.0
+                )
+
+                when (val gameResult = UseCase.createGame(gameRequest)) {
+                    is NetworkResult.Success -> {
+                        val game = gameResult.data
+                        UserRepository.GameId = game.id
+                        Log.d("CreateGame", "Онлайн игра создана: ${game.id}")
+                        onGameCreated(game.id)
+                    }
+                    is NetworkResult.Error -> {
+                        Log.e("CreateGame", "Ошибка: ${gameResult.errorResponse.message}")
+                    }
+                    is NetworkResult.NoInternet -> {
+                        Log.e("CreateGame", "Нет интернета")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("CreateGame", "Исключение: ${e.message}", e)
+            }
+        }
+    }
+
+    /**
+     * Подключение к игре по коду
+     */
+    fun joinMultiplayerGame(
+        gameId: String,
+        onJoined: () -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                Log.d("JoinGame", "=== ПОДКЛЮЧЕНИЕ К ИГРЕ ===")
+                Log.d("JoinGame", "gameId: $gameId")
+
+                // 1. Проверяем, существует ли игра
+                when (val gameResult = UseCase.getGame(gameId)) {
+                    is NetworkResult.Success -> {
+                        val game = gameResult.data
+                        Log.d("JoinGame", "Игра найдена: ${game.name}, статус: ${game.status}")
+
+                        if (game.status == "finished") {
+                            Log.e("JoinGame", "Игра уже завершена")
+                            return@launch
+                        }
+
+                        if (game.players.size >= game.countPlayer.toInt()) {
+                            Log.e("JoinGame", "Игра заполнена")
+                            return@launch
+                        }
+
+                        // 2. Создаём игрока
+                        val playerResult = UseCase.createPlayer(
+                            CreatePlayer(
+                                userId = UserRepository.UserId,
+                                gameId = gameId,
+                                isBot = false,
+                                position = 0,
+                                shield = false,
+                                finished = false,
+                                turnOrder = game.players.size
+                            )
+                        )
+                        if (playerResult !is NetworkResult.Success) {
+                            Log.e("JoinGame", "Ошибка создания игрока")
+                            return@launch
+                        }
+                        val player = playerResult.data
+                        UserRepository.PlayerId = player.id
+                        UserRepository.GameId = gameId
+                        Log.d("JoinGame", "Игрок создан: ${player.id}")
+
+                        // 3. Добавляем игрока в игру
+                        val updatedPlayers = game.players + player.id
+                        val patchRequest = RedactGame(
+                            players = updatedPlayers,
+                            type = game.type,
+                            status = game.status,
+                            start = game.start,
+                            end = game.end,
+                            countCell = game.countCell,
+                            creator = game.creator,
+                            currentPlayer = game.currentPlayer,
+                            currentTurn = game.currentTurn,
+                            diceValue = game.diceValue
+                        )
+
+                        UseCase.patchGames(gameId, patchRequest)
+                        Log.d("JoinGame", "Игрок добавлен в игру")
+
+                        onJoined()
+                    }
+                    is NetworkResult.Error -> {
+                        Log.e("JoinGame", "Игра не найдена: ${gameResult.errorResponse.message}")
+                    }
+                    is NetworkResult.NoInternet -> {
+                        Log.e("JoinGame", "Нет интернета")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("JoinGame", "Исключение: ${e.message}", e)
+            }
+        }
+    }
+
+    /**
+     * Синхронизация состояния игры (polling)
+     */
+    fun syncGameState() {
+        viewModelScope.launch {
+            try {
+                val gameId = UserRepository.GameId
+                if (gameId.isEmpty()) return@launch
+
+                // Получаем игру
+                when (val gameResult = UseCase.getGame(gameId)) {
+                    is NetworkResult.Success -> {
+                        val game = gameResult.data
+
+                        // Получаем игроков
+                        when (val playersResult = UseCase.getPlayers("gameId='$gameId'")) {
+                            is NetworkResult.Success -> {
+                                val players = playersResult.data.items
+
+                            }
+                            else -> {}
+                        }
+                    }
+                    else -> {}
+                }
+            } catch (e: Exception) {
+                Log.e("SyncGame", "Ошибка синхронизации: ${e.message}", e)
+            }
+        }
+    }
 
 
 

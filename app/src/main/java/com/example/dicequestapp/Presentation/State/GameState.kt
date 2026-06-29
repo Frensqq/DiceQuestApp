@@ -6,38 +6,22 @@ import com.example.dq_net_library.Domain.Model.Game.Game
 import com.example.dq_net_library.Domain.Model.Player.Player
 
 data class GameState (
-
     var gameId: String = "",
-
-    // Информация об игроке
     var player: Player? = null,
     var playerId: String = "",
-
-    // Ячейки поля
-
     var isBoardGenerated: Boolean = false,
-
-    // Статусы
     var isLoading: Boolean = false,
     var error: String? = null,
-
-    // Статистика по ячейкам
     var bonusCount: Int = 0,
     var penaltyCount: Int = 0,
     var protectionCount: Int = 0,
     var eventCount: Int = 0,
     var emptyCount: Int = 0,
-
-    // Для мультиплеера
     var isMultiplayer: Boolean = false,
     var expectedPlayers: Int = 2,
     var currentPlayers: Int = 0,
-
-    // Состояние игры
     var canStart: Boolean = false,
     var gameStarted: Boolean = false,
-
-
 
     val game: Game? = null,
     val players: List<Player> = emptyList(),
@@ -48,13 +32,14 @@ data class GameState (
     val diceValue: Int = 0,
     val canRollDice: Boolean = true,
     val winner: Player? = null,
-
     val gameLog: List<String> = emptyList(),
-
     val showNotification: Boolean = false,
     val notificationTitle: String = "",
     val notificationName: String = "",
     val notificationValue: String = "",
     val notificationImage: Painter? = null,
-    val isWinner: Boolean = false
+    val isWinner: Boolean = false,
+    val isGameFinished: Boolean = false,
+    val isTurnProcessing: Boolean = false,
+    val isCreator: Boolean = false
 )

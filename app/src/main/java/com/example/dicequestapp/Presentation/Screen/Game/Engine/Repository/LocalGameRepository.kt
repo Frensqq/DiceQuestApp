@@ -2,6 +2,7 @@ package com.example.dicequestapp.Presentation.Screen.Game.Engine.Repository
 
 import android.util.Log
 import com.example.dicequestapp.Domain.UseCase
+import com.example.dicequestapp.Domain.UserRepository
 import com.example.dq_net_library.Domain.Model.Cell.Cell
 import com.example.dq_net_library.Domain.Model.Game.Game
 import com.example.dq_net_library.Domain.Model.Game.RedactGame
@@ -30,6 +31,7 @@ class PocketBaseGameRepository(
                 start = game.start,
                 end = game.end,
                 countCell = game.countCell,
+                creator = UserRepository.PlayerId,
                 currentPlayer = game.currentPlayer,
                 currentTurn = game.currentTurn,
                 diceValue = game.diceValue
@@ -150,6 +152,7 @@ class PocketBaseGameRepository(
                 status = currentGame.status,
                 start = currentGame.start,
                 end = currentGame.end,
+                creator = UserRepository.PlayerId,
                 countCell = currentGame.countCell,
                 currentPlayer = currentGame.currentPlayer,
                 currentTurn = currentGame.currentTurn,
@@ -171,5 +174,23 @@ class PocketBaseGameRepository(
 
     override suspend fun unsubscribeFromGame(gameId: String) {
         // Для одиночной игры не нужно
+    }
+
+    override suspend fun deletePlayer(playerId: String): Result<Unit> {
+        return try {
+            useCase.deletePlayer(playerId)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun deleteCell(cellId: String): Result<Unit> {
+        return try {
+            useCase.deleteCell(cellId)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }
