@@ -13,6 +13,7 @@ import com.example.dicequestapp.Presentation.Screen.Auth.OtpResponse
 import com.example.dicequestapp.Presentation.Screen.Auth.RegisterScreen
 import com.example.dicequestapp.Presentation.Screen.Game.GameBoardScreen
 import com.example.dicequestapp.Presentation.Screen.Game.StartGameScreen
+import com.example.dicequestapp.Presentation.Screen.Game.WaitingRoomScreen
 import com.example.dicequestapp.Presentation.Screen.Main.MainScreen
 import com.example.dicequestapp.Presentation.Screen.Main.ProfileScreen
 import com.example.dicequestapp.Presentation.Screen.System.NoInternetScreen
@@ -96,6 +97,22 @@ fun Navigation(isOnline: Boolean){
                 navController = NavController,
                 viewModel = gameViewModel,
                 mainViewModel = mainViewModel
+            )
+        }
+
+        composable(NavigationRoutes.WAITING_ROOM) {
+            val gameId = UserRepository.GameId
+            val isHost = true
+            WaitingRoomScreen(
+                navController = NavController,
+                viewModel = mainViewModel,
+                gameId = gameId,
+                isHost = isHost,
+                onGameStart = {
+                    NavController.navigate(NavigationRoutes.GAME_BOARD) {
+                        popUpTo(NavigationRoutes.WAITING_ROOM) { inclusive = true }
+                    }
+                }
             )
         }
 

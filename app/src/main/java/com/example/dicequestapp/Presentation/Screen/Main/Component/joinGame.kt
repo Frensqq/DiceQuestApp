@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,7 +32,6 @@ import com.example.dicequestapp.Presentation.ViewModels.MainViewModel
 import com.example.dq_ui.Button.ButtonBig
 import com.example.dq_ui.Button.ButtonSmall
 import com.example.dq_ui.Inputs.InputText
-import com.example.dq_ui.Inputs.PlayerCountSelector
 import com.example.dq_ui.UI.DiceQuestTheme
 import com.example.dq_ui.UI.SpacerH
 import com.example.dq_ui.UI.SpacerW
@@ -44,16 +44,18 @@ import com.google.accompanist.permissions.rememberPermissionState
 fun JoinGameDialog(
     navHostController: NavHostController,
     viewModel: MainViewModel,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onJoined: (gameId: String) -> Unit  // <-- callback при успешном подключении
 ) {
     val state = viewModel.state
     val context = LocalContext.current
     var isScanning by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
     val cameraPermission = rememberPermissionState(Manifest.permission.CAMERA)
 
-
     Dialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { if (!isLoading) onDismiss() },
         properties = DialogProperties(
             usePlatformDefaultWidth = false,
             decorFitsSystemWindows = false
@@ -75,87 +77,129 @@ fun JoinGameDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Подключение к игре",
+                    text = if (isLoading) "Подключение..." else "Подключение к игре",
                     style = DiceQuestTheme.typography.headlineLarge,
                     color = DiceQuestTheme.colors.TextPrimary,
                     textAlign = TextAlign.Center
                 )
 
-                SpacerH(20)
+                if (isLoading) {
+                    SpacerH(20)
+                    CircularProgressIndicator(
+                        color = DiceQuestTheme.colors.Primary,
+                        modifier = Modifier.height(48.dp)
+                    )
+                    SpacerH(16)
+                    Text(
+                        text = "Пожалуйста, подождите...",
+                        style = DiceQuestTheme.typography.bodyMedium,
+                        color = DiceQuestTheme.colors.TextSecondary
+                    )
+                } else {
+                    SpacerH(20)
 
-                InputText(
-                    text = state.gameId,
-                    placeholder = "Введите код игры",
-                    onValueChange = {
-                        viewModel.updateState(state.copy(gameId = it)) },
-                    isPass = false
-                )
+                    InputText(
+                        text = state.gameId,
+                        placeholder = "Введите код игры",
+                        onValueChange = {
+                            viewModel.updateState(state.copy(gameId = it))
+                            errorMessage = null
+                        },
+                        isPass = false,
+                        isError = errorMessage != null
+                    )
 
-                SpacerH(16)
-
-                Column() {
-                    if (isScanning && cameraPermission.status.isGranted) {
-                        SpacerH(8)
-                        QRCodeScannerView(
-                            onQrCodeScanned = { code ->
-                                viewModel.updateState(
-                                    state.copy(
-                                        gameId = code,
-                                        generalError = null
-                                    )
-                                )
-                                isScanning = false
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(180.dp)
+                    if (errorMessage != null) {
+                        Text(
+                            text = errorMessage!!,
+                            style = DiceQuestTheme.typography.bodySmall,
+                            color = DiceQuestTheme.colors.Error,
+                            modifier = Modifier.padding(start = 4.dp, top = 4.dp)
                         )
-                        SpacerH(8)
                     }
 
-                    ButtonBig(
-                        text = if (isScanning) "Скрыть сканер" else "Сканировать QR-код",
-                        onClick = {
-                            if (!cameraPermission.status.isGranted) {
-                                cameraPermission.launchPermissionRequest()
-                            } else {
-                                isScanning = !isScanning
-                            }
-                        },
-                        type = true
-                    )
+                    SpacerH(16)
 
+                    Column {
+                        if (isScanning && cameraPermission.status.isGranted) {
+                            SpacerH(8)
+                            QRCodeScannerView(
+                                onQrCodeScanned = { code ->
+                                    viewModel.updateState(
+                                        state.copy(
+                                            gameId = code,
+                                            generalError = null
+                                        )
+                                    )
+                                    errorMessage = null
+                                    isScanning = false
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(180.dp)
+                            )
+                            SpacerH(8)
+                        }
+
+                        ButtonBig(
+                            text = if (isScanning) "Скрыть сканер" else "Сканировать QR-код",
+                            onClick = {
+                                if (!cameraPermission.status.isGranted) {
+                                    cameraPermission.launchPermissionRequest()
+                                } else {
+                                    isScanning = !isScanning
+                                }
+                            },
+                            type = true
+                        )
+                    }
+
+                    SpacerH(24)
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        ButtonSmall(
+                            onClick = {
+                                val gameId = state.gameId.trim()
+                                if (gameId.isEmpty()) {
+                                    errorMessage = "Введите код игры"
+                                    return@ButtonSmall
+                                }
+
+                                isLoading = true
+                                errorMessage = null
+
+                                viewModel.joinMultiplayerGame(
+                                    gameId = gameId,
+                                    onJoined = {
+                                        isLoading = false
+                                        onJoined(gameId)
+                                        onDismiss()
+                                    },
+                                    onError = { error ->
+                                        isLoading = false
+                                        errorMessage = error
+                                    }
+                                )
+                            },
+                            text = "Войти",
+                            type = false
+                        )
+
+                        SpacerW(5)
+
+                        ButtonSmall(
+                            onClick = {
+                                viewModel.updateState(state.copy(gameId = ""))
+                                onDismiss()
+                            },
+                            text = "Отмена",
+                            type = true
+                        )
+                    }
                 }
-
-                SpacerH(24)
-
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    ButtonSmall(
-                        onClick = {
-                            viewModel.updateState(state.copy(statusGame = "Created"))
-                            onDismiss()
-                        },
-                        text = "Войти",
-                        type = false
-                    )
-
-                    SpacerW(5)
-
-                    ButtonSmall(
-                        onClick = {
-                            viewModel.updateState(state.copy(username = ""))
-                            onDismiss()
-                        },
-                        text = "Отмена",
-                        type = true
-                    )
-                }
-
-
             }
         }
     }

@@ -159,5 +159,22 @@ class GameViewModel(
         }
     }
 
+    fun syncGameState() {
+        viewModelScope.launch {
+            try {
+                val gameId = UserRepository.GameId
+                if (gameId.isEmpty()) return@launch
+
+                // Перезагружаем игру через engine
+                engine.initGame(gameId)
+                _state.value = engine.getState()
+
+                Log.d("GameViewModel", "Sync: isMyTurn = ${_state.value.isMyTurn}")
+            } catch (e: Exception) {
+                Log.e("GameViewModel", "Sync error: ${e.message}", e)
+            }
+        }
+    }
+
 
 }

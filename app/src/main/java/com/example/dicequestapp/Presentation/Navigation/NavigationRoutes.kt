@@ -32,4 +32,6 @@ object NavigationRoutes {
 
     const val GAME_BOARD = "GameBoard"
 
+    const val WAITING_ROOM = "WaitingRoom"
+
 }

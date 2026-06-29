@@ -238,14 +238,16 @@ class GameEngine(
             currentPlayer = currentPlayer,
             cells = cells,
             isMyTurn = isMyTurn,
+            canRollDice = isMyTurn && game?.status == "playing",
+            isMultiplayer = game?.multiplayer ?: false,
             isHost = isHost,
             diceValue = game?.diceValue?.toInt() ?: 0,
-            canRollDice = isMyTurn && game?.status == "playing",
             winner = winner,
             isGameFinished = game?.status == "finished",
             gameId = game?.id ?: "",
             gameLog = gameLog.toList(),
             isCreator = isCreator
+
         )
     }
 

@@ -98,6 +98,19 @@ fun GameBoardScreen(
     }
 
     val state = viewModel.state
+    val isMultiplayer = state.isMultiplayer
+
+
+    LaunchedEffect(isMultiplayer) {
+        if (isMultiplayer) {
+            while (true) {
+                delay(2000L)
+                viewModel.syncGameState()
+            }
+        }
+    }
+
+    val myPlayerId = UserRepository.PlayerId
 
     val colors = listOf(
         Color(0xFFFF6B6B),
@@ -234,12 +247,15 @@ fun GameBoardScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
+                        // 🔥 КУБИК — активен только если ход ТВОЕГО игрока
+                        val isMyTurn = state.currentPlayer?.id == UserRepository.PlayerId && state.game?.status == "playing"
+
                         Dice(
                             modifier = Modifier.size(80.dp),
-                            isEnabled = state.canRollDice,
+                            isEnabled = isMyTurn && state.canRollDice && !state.isTurnProcessing,
                             onRollComplete = { diceValue ->
                                 val playerId = state.currentPlayer?.id
-                                if (playerId != null) {
+                                if (playerId != null && playerId == UserRepository.PlayerId) {
                                     viewModel.makeTurn(playerId, diceValue)
                                 }
                             }
@@ -252,36 +268,21 @@ fun GameBoardScreen(
                                 color = DiceQuestTheme.colors.Primary
                             )
                         }
-                        LaunchedEffect(state.isGameFinished) {
-                            if (state.isGameFinished) {
-                                val winner = state.winner
-                                val isPlayerWin = winner?.id == state.player?.id
 
-                                if (isPlayerWin) {
-                                    viewModel.showNotification(
-                                        title = "Победа",
-                                        text = "Вы победили!",
-                                        value = "0.0"
-                                    )
-                                } else {
-                                    viewModel.showNotification(
-                                        title = "Поражение",
-                                        text = "Вы проиграли!",
-                                        value = "0.0"
-                                    )
-                                }
-
-                                delay(3000L)
-                                viewModel.finishGameAndExit(navController)
-                            }
-                        }
-
+                        // Цвет текущего игрока
                         val currentPlayerColor = state.currentPlayer?.let { playerColors[it.id] } ?: Color.Gray
                         Box(
                             modifier = Modifier
                                 .size(14.dp)
                                 .background(currentPlayerColor, shape = CircleShape)
                                 .border(1.5.dp, DiceQuestTheme.colors.TextSecondary.copy(alpha = 0.3f), shape = CircleShape)
+                        )
+
+                        // 🔥 Показываем, чей ход
+                        Text(
+                            text = if (isMyTurn) "Твой ход!" else "Ход: ${state.currentPlayer?.let { if (it.isBot) "Бот" else "Игрок" } ?: "—"}",
+                            style = DiceQuestTheme.typography.bodySmall,
+                            color = if (isMyTurn) DiceQuestTheme.colors.Success else DiceQuestTheme.colors.TextSecondary
                         )
                     }
 
