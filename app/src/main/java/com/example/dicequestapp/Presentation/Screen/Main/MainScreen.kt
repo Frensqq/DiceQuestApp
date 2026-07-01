@@ -64,7 +64,9 @@ fun MainScreen(navController: NavHostController, viewModel: MainViewModel, gameV
             CardUser(
                 rememberAsyncImagePainter(userAvatarUrl),
                 UserRepository.userName?:"User",
-                {},
+                {
+                    navController.navigate(NavigationRoutes.SETTINGS)
+                },
                 painterResource(R.drawable.settings)
             )
 

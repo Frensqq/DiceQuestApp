@@ -14,8 +14,10 @@ import com.example.dicequestapp.Presentation.Screen.Auth.RegisterScreen
 import com.example.dicequestapp.Presentation.Screen.Game.GameBoardScreen
 import com.example.dicequestapp.Presentation.Screen.Game.StartGameScreen
 import com.example.dicequestapp.Presentation.Screen.Game.WaitingRoomScreen
+import com.example.dicequestapp.Presentation.Screen.History.HistoryScreen
 import com.example.dicequestapp.Presentation.Screen.Main.MainScreen
 import com.example.dicequestapp.Presentation.Screen.Main.ProfileScreen
+import com.example.dicequestapp.Presentation.Screen.Settings.SettingsScreen
 import com.example.dicequestapp.Presentation.Screen.System.NoInternetScreen
 import com.example.dicequestapp.Presentation.Screen.System.SplashScreen
 import com.example.dicequestapp.Presentation.ViewModels.GameViewModel
@@ -116,17 +118,15 @@ fun Navigation(isOnline: Boolean){
             )
         }
 
-        composable(NavigationRoutes.CHANGE_PASS) {
-
+        composable(NavigationRoutes.HISTORY) {
+            HistoryScreen(NavController)
         }
 
-        composable(NavigationRoutes.CHANGE_PASS_CONFIRM) {
-
+        composable(NavigationRoutes.SETTINGS) {
+            SettingsScreen(NavController)
         }
 
-        composable(NavigationRoutes.CREATE_USER) {
 
-        }
 
     }
 

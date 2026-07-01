@@ -24,6 +24,7 @@ data class GameState (
     var gameStarted: Boolean = false,
 
 
+
     val game: Game? = null,
     val players: List<Player> = emptyList(),
     val currentPlayer: Player? = null,

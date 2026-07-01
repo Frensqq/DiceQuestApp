@@ -209,7 +209,6 @@ class GameEngine(
             addLog("$displayName победил")
             game = game?.copy(status = "finished")
             repository.updateGame(game!!)
-            // Сохраняем победителя в отдельную переменную
             winner = updatedPlayer
             return
         }
@@ -224,10 +223,8 @@ class GameEngine(
         val currentPlayer = players.getOrNull(currentPlayerIndex)
         val isMyTurn = currentPlayer?.id == game?.currentPlayer
 
-        // Находим игрока-человека (не бота)
         val humanPlayer = players.find { !it.isBot }
 
-        // Проверяем, является ли humanPlayer создателем
         val isCreator = game?.creator == humanPlayer?.id
 
         return GameState(

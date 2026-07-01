@@ -110,6 +110,30 @@ fun GameBoardScreen(
         }
     }
 
+    LaunchedEffect(state.isGameFinished) {
+        if (state.isGameFinished) {
+            val winner = state.winner
+            val isPlayerWin = winner?.id == state.player?.id
+
+            if (isPlayerWin) {
+                viewModel.showNotification(
+                    title = "Победа",
+                    text = "Вы победили!",
+                    value = "Ура!"
+                )
+            } else {
+                viewModel.showNotification(
+                    title = "Поражение",
+                    text = "Вы проиграли!",
+                    value = "Увы"
+                )
+            }
+
+            delay(3000L)
+            viewModel.finishGameAndExit(navController)
+        }
+    }
+
     val myPlayerId = UserRepository.PlayerId
 
     val colors = listOf(
