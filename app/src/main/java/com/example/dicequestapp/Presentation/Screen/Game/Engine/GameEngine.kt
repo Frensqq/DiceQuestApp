@@ -209,7 +209,6 @@ class GameEngine(
             addLog("$displayName победил")
             game = game?.copy(status = "finished")
             repository.updateGame(game!!)
-            // Сохраняем победителя в отдельную переменную
             winner = updatedPlayer
             return
         }
@@ -224,10 +223,8 @@ class GameEngine(
         val currentPlayer = players.getOrNull(currentPlayerIndex)
         val isMyTurn = currentPlayer?.id == game?.currentPlayer
 
-        // Находим игрока-человека (не бота)
         val humanPlayer = players.find { !it.isBot }
 
-        // Проверяем, является ли humanPlayer создателем
         val isCreator = game?.creator == humanPlayer?.id
 
         return GameState(
@@ -238,14 +235,16 @@ class GameEngine(
             currentPlayer = currentPlayer,
             cells = cells,
             isMyTurn = isMyTurn,
+            canRollDice = isMyTurn && game?.status == "playing",
+            isMultiplayer = game?.multiplayer ?: false,
             isHost = isHost,
             diceValue = game?.diceValue?.toInt() ?: 0,
-            canRollDice = isMyTurn && game?.status == "playing",
             winner = winner,
             isGameFinished = game?.status == "finished",
             gameId = game?.id ?: "",
             gameLog = gameLog.toList(),
             isCreator = isCreator
+
         )
     }
 

@@ -60,6 +60,7 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
+            UserRepository.Act = false
             DiceQuestTheme {
                 val onlineStatus by isOnline.collectAsState(initial = false)
                 Navigation(onlineStatus)

@@ -30,7 +30,6 @@ import com.example.dq_ui.Headers.Header
 import com.example.dq_ui.R
 import com.example.dq_ui.UI.SpacerH
 import com.example.dq_ui.icons.BottomNavItem
-import com.example.htm.Presentation.viewModels.AuthViewModel
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
@@ -65,7 +64,9 @@ fun MainScreen(navController: NavHostController, viewModel: MainViewModel, gameV
             CardUser(
                 rememberAsyncImagePainter(userAvatarUrl),
                 UserRepository.userName?:"User",
-                {},
+                {
+                    navController.navigate(NavigationRoutes.SETTINGS)
+                },
                 painterResource(R.drawable.settings)
             )
 
@@ -84,7 +85,7 @@ fun MainScreen(navController: NavHostController, viewModel: MainViewModel, gameV
                 SpacerH(20)
                 CardMenu(
                     "Мультиплеер",
-                    "Сыграйте в игру с друзьями от 2 до 4 человек",
+                    "Сыграйте в игру с друзьями",
                     {
                         isMultiplayer = true
                         showCreateGameDialog = true
@@ -98,14 +99,15 @@ fun MainScreen(navController: NavHostController, viewModel: MainViewModel, gameV
                     {
                         showJoinDialog = true
                     },
-                    painterResource(com.example.dicequestapp.R.drawable.join_game))
-                SpacerH(20)
-                CardMenu(
-                    "Правила игры",
-                    "Изучите правила и особенности игры перед началом",
-                    {},
-                    painterResource(com.example.dicequestapp.R.drawable.rule)
+                    painterResource(com.example.dicequestapp.R.drawable.join_game)
                 )
+                SpacerH(20)
+//                CardMenu(
+//                    "Правила игры",
+//                    "Изучите правила и особенности игры перед началом",
+//                    {},
+//                    painterResource(com.example.dicequestapp.R.drawable.rule)
+//                )
             }
         }
     }
@@ -118,10 +120,18 @@ fun MainScreen(navController: NavHostController, viewModel: MainViewModel, gameV
             onDismiss = { showCreateGameDialog = false },
             onGameCreated = { gameId ->
                 showCreateGameDialog = false
-                navController.navigate(NavigationRoutes.GAME_BOARD)
+
+                if (isMultiplayer) {
+                    // Онлайн игра — сначала ждём игроков
+                    navController.navigate(NavigationRoutes.WAITING_ROOM)
+                } else {
+                    // Одиночная игра — сразу на поле
+                    navController.navigate(NavigationRoutes.GAME_BOARD)
+                }
             }
         )
     }
+
     if (showEditDialog) {
         EditProfileDialog(
             navController,
@@ -132,9 +142,13 @@ fun MainScreen(navController: NavHostController, viewModel: MainViewModel, gameV
 
     if (showJoinDialog) {
         JoinGameDialog(
-            navController,
+            navHostController = navController,
             viewModel = viewModel,
-            onDismiss = { showJoinDialog = false }
+            onDismiss = { showJoinDialog = false },
+            onJoined = { gameId ->
+                showJoinDialog = false
+                navController.navigate(NavigationRoutes.WAITING_ROOM)
+            }
         )
     }
 }

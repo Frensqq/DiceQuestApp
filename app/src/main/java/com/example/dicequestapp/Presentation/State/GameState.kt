@@ -23,6 +23,8 @@ data class GameState (
     var canStart: Boolean = false,
     var gameStarted: Boolean = false,
 
+
+
     val game: Game? = null,
     val players: List<Player> = emptyList(),
     val currentPlayer: Player? = null,
@@ -42,4 +44,6 @@ data class GameState (
     val isGameFinished: Boolean = false,
     val isTurnProcessing: Boolean = false,
     val isCreator: Boolean = false
+
+
 )

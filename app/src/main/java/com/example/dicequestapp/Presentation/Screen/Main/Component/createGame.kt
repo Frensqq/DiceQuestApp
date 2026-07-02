@@ -138,8 +138,15 @@ fun CreateGameDialog(
                         ButtonSmall(
                             onClick = {
                                 isLoading = true
+
                                 if (isMultiplayer) {
-                                    // viewModel.createMultiplayerGame(...)
+                                    viewModel.createMultiplayerGame(
+                                        gameName = state.nameGame.ifEmpty { "Игра ${System.currentTimeMillis()}" },
+                                        maxPlayers = state.countPlayer
+                                    ) { gameId ->
+                                        isLoading = false
+                                        onGameCreated(gameId)
+                                    }
                                 } else {
                                     viewModel.createSinglePlayerGame(
                                         gameName = state.nameGame.ifEmpty { "Игра ${System.currentTimeMillis()}" },

@@ -38,6 +38,14 @@ object UserRepository {
         get() = actSystem.getString("userName","")!!
         set(value) = actSystem.edit().putString("userName", value).apply()
 
+    var isHost: Boolean
+        get() = actSystem.getBoolean("isHost", false)
+        set(value) = actSystem.edit().putBoolean("isHost", value).apply()
+
+    var isMultiplayer: Boolean
+        get() = actSystem.getBoolean("isMultiplayer", false)
+        set(value) = actSystem.edit().putBoolean("isMultiplayer", value).apply()
+
     var currentGame: String
         get() = actSystem.getString("currentGame","")!!
         set(value) = actSystem.edit().putString("currentGame", value).apply()
