@@ -102,12 +102,12 @@ fun MainScreen(navController: NavHostController, viewModel: MainViewModel, gameV
                     painterResource(com.example.dicequestapp.R.drawable.join_game)
                 )
                 SpacerH(20)
-                CardMenu(
-                    "Правила игры",
-                    "Изучите правила и особенности игры перед началом",
-                    {},
-                    painterResource(com.example.dicequestapp.R.drawable.rule)
-                )
+//                CardMenu(
+//                    "Правила игры",
+//                    "Изучите правила и особенности игры перед началом",
+//                    {},
+//                    painterResource(com.example.dicequestapp.R.drawable.rule)
+//                )
             }
         }
     }
